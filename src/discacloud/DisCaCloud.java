@@ -5,6 +5,7 @@
  */
 package discacloud;
 
+import org.cloudbus.cloudsim.Datacenter;
 /**
  *
  * @author ataka
@@ -17,6 +18,7 @@ public class DisCaCloud {
     public static void main(String[] args) {
         // TODO code application logic here
         // HELLO WORLD!
+        System.out.println("aaa");
     }
     
 }
