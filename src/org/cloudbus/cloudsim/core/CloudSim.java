@@ -600,6 +600,7 @@ public class CloudSim {
 		}
 
 		SimEvent e = new SimEvent(SimEvent.SEND, clock + delay, src, dest, tag, data);
+                e.CustomtoString("CloudSim");
 		future.addEvent(e);
 	}
 

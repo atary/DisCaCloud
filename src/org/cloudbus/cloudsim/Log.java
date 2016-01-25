@@ -10,6 +10,7 @@ package org.cloudbus.cloudsim;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import org.cloudbus.cloudsim.core.PrintFile;
 
 /**
  * The Log class used for performing loggin of the simulation process. It provides the ability to
@@ -38,6 +39,8 @@ public class Log {
 		if (!isDisabled()) {
 			try {
 				getOutput().write(message.getBytes());
+                                PrintFile.AddtoFile(message);
+                                
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

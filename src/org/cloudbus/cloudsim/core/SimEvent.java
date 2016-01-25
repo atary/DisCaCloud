@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim.core;
 
+import java.util.ArrayList;
+
 /**
  * This class represents a simulation event which is passed between the entities in the simulation.
  * 
@@ -95,11 +97,51 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 		endWaitingTime = end_waiting_time;
 	}
 
-	@Override
-	public String toString() {
-		return "Event tag = " + tag + " source = " + CloudSim.getEntity(entSrc).getName() + " destination = "
-				+ CloudSim.getEntity(entDst).getName();
-	}
+	    // below code added by anupinder singh
+        public void CustomtoString(String className) {
+            ArrayList<String> type = new ArrayList<String>();
+            type.add("ENULL");
+            type.add("SEND");
+            type.add("HOLD_DONE");
+            type.add("CREATE");
+            /*String msg = className + ": -->Event Type = " + type.get(etype)
+                    + ";Event tag = " + CloudSimTags.TagText(tag) + "; source = "
+                    + CloudSim.getEntity(entSrc).getName() + "; destination = "
+                    + CloudSim.getEntity(entDst).getName() + "; Time= " + this.time
+                    + "; endwaiting time = " + this.endWaitingTime;*/
+            String msg = this.time + "+" + this.endWaitingTime + ": " + CloudSimTags.TagText(tag) + ": " +  CloudSim.getEntity(entSrc).getName() + "-->" + CloudSim.getEntity(entDst).getName();
+            if (data != null) {
+                msg += " data = " + data.toString();
+            }
+            msg += System.lineSeparator();
+
+            PrintFile.AddtoFile(msg);
+        }
+
+        @Override
+        public String toString() {
+            // below code commented is original, rest all added by anupinder singh
+            ArrayList<String> type = new ArrayList<String>();
+            type.add("ENULL");
+            type.add("SEND");
+            type.add("HOLD_DONE");
+            type.add("CREATE");
+            String msg = "-->Event Type = " + type.get(etype) + ";Event tag = "
+                    + CloudSimTags.TagText(tag) + "; source = "
+                    + CloudSim.getEntity(entSrc).getName() + "; destination = "
+                    + CloudSim.getEntity(entDst).getName() + "; Time= " + this.time
+                    + "; endwaiting time = " + this.endWaitingTime;
+            if (data != null) {
+                msg += "; data = " + data.toString();
+            }
+            msg += "\n\n";
+
+            return "\n\n" + msg;
+
+            // return "Event tag = " + tag + " source = " +
+            // CloudSim.getEntity(entSrc).getName() + " destination = "
+            // + CloudSim.getEntity(entDst).getName();
+        }
 
 	/**
 	 * The internal type
