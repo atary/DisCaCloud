@@ -99,12 +99,12 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 
 	    // below code added by anupinder singh
         public void CustomtoString(String className) {
-            ArrayList<String> type = new ArrayList<String>();
+            /*ArrayList<String> type = new ArrayList<>();
             type.add("ENULL");
             type.add("SEND");
             type.add("HOLD_DONE");
             type.add("CREATE");
-            /*String msg = className + ": -->Event Type = " + type.get(etype)
+            String msg = className + ": -->Event Type = " + type.get(etype)
                     + ";Event tag = " + CloudSimTags.TagText(tag) + "; source = "
                     + CloudSim.getEntity(entSrc).getName() + "; destination = "
                     + CloudSim.getEntity(entDst).getName() + "; Time= " + this.time
@@ -120,27 +120,7 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 
         @Override
         public String toString() {
-            // below code commented is original, rest all added by anupinder singh
-            ArrayList<String> type = new ArrayList<String>();
-            type.add("ENULL");
-            type.add("SEND");
-            type.add("HOLD_DONE");
-            type.add("CREATE");
-            String msg = "-->Event Type = " + type.get(etype) + ";Event tag = "
-                    + CloudSimTags.TagText(tag) + "; source = "
-                    + CloudSim.getEntity(entSrc).getName() + "; destination = "
-                    + CloudSim.getEntity(entDst).getName() + "; Time= " + this.time
-                    + "; endwaiting time = " + this.endWaitingTime;
-            if (data != null) {
-                msg += "; data = " + data.toString();
-            }
-            msg += "\n\n";
-
-            return "\n\n" + msg;
-
-            // return "Event tag = " + tag + " source = " +
-            // CloudSim.getEntity(entSrc).getName() + " destination = "
-            // + CloudSim.getEntity(entDst).getName();
+             return "Event tag = " + tag + " source = " + CloudSim.getEntity(entSrc).getName() + " destination = " + CloudSim.getEntity(entDst).getName();
         }
 
 	/**
