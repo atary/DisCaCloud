@@ -755,7 +755,7 @@ public class Datacenter extends SimEntity {
             //ATAKAN: Pause cloudlet and request data
 
             //Şimdilik kendisine
-            schedule(getId(), 100, CloudSimTags.REMOTE_DATA_REQUEST, cl);
+            send(getId(), 100, CloudSimTags.REMOTE_DATA_REQUEST, cl);
             processCloudletPause(cl.getCloudletId(), userId, vmId, false);
 
             if (ack) {
