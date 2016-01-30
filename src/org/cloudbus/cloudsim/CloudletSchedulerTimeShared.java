@@ -63,7 +63,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	public double updateVmProcessing(double currentTime, List<Double> mipsShare) {
 		setCurrentMipsShare(mipsShare);
 		double timeSpam = currentTime - getPreviousTime();
-
+                
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			rcl.updateCloudletFinishedSoFar((long) (getCapacity(mipsShare) * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
 		}
@@ -279,10 +279,12 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			// first: how many PEs do we have?
 
 			double remainingLength = rgl.getRemainingCloudletLength();
-			double estimatedFinishTime = CloudSim.clock()
-					+ (remainingLength / (getCapacity(getCurrentMipsShare()) * rgl.getNumberOfPes()));
+                        //ATAKAN: This was possibly a bug. It is parsed as duration not time in Datacenter.processCloudletResume()
+                        //double estimatedFinishTime = CloudSim.clock()	+ (remainingLength / (getCapacity(getCurrentMipsShare()) * rgl.getNumberOfPes()));
 
-			return estimatedFinishTime;
+			double estimatedFinishDuration = (remainingLength / (getCapacity(getCurrentMipsShare()) * rgl.getNumberOfPes()));
+
+			return estimatedFinishDuration;
 		}
 
 		return 0.0;

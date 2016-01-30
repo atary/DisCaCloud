@@ -264,6 +264,11 @@ public class CloudSimTags {
 	public static final int Network_Event_Host = BASE + 47;
 
 	public static final int NextCycle = BASE + 48;
+        
+        
+        /*ATAKAN*/
+        
+        public static final int REMOTE_DATA_REQUEST = BASE + 49;
 
 
         public static String TagText(int tagValue) {
@@ -378,6 +383,8 @@ public class CloudSimTags {
                 return "Network_Event_Host";
             case 48:
                 return "NextCycle";
+            case 49:
+                return "REMOTE_DATA_REQUEST";
             default:
                 return "Invalid tag value";
             }
