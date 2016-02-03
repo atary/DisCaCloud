@@ -752,17 +752,15 @@ public class Datacenter extends SimEntity {
             // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
                 //estimatedFinishTime += fileTransferTime + 0;
-                //ATAKAN: An event must be created at the end of the pause time.
-                sendNow(getId(), CloudSimTags.VM_DATACENTER_EVENT);
 
-                //ATAKAN: Pause cloudlet and request data
+                //ATAKAN: Pause cloudlet and request data 
                 int[] data = new int[4];
                 data[0] = getId();
                 data[1] = cl.getCloudletId();
                 data[2] = cl.getUserId();
                 data[3] = cl.getVmId();
                 sendNow(getDataSourceId(), CloudSimTags.REMOTE_DATA_REQUEST, data);
-                processCloudletPause(cl.getCloudletId(), userId, vmId, false);
+                processCloudletPause(cl.getCloudletId(), userId, vmId, false);                
             }
 
             if (ack) {
@@ -795,13 +793,11 @@ public class Datacenter extends SimEntity {
         if (true) { //Check if cache is actually here
             sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
         }
-        //processCloudletResume(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), false);
     }
 
     private void processDataReturn(SimEvent ev) {
         int[] data = (int[]) ev.getData();
         processCloudletResume(data[1], data[2], data[3], false);
-        scheduleNow(getId(), CloudSimTags.VM_DATACENTER_EVENT);
     }
 
     private int getDataSourceId() {
@@ -844,6 +840,9 @@ public class Datacenter extends SimEntity {
      */
     protected void processCloudletResume(int cloudletId, int userId, int vmId, boolean ack) {
         Log.printLine(CloudSim.clock() + " processCloudletResume " + cloudletId);
+        //ATAKAN: Always update paused cloudlets first.
+        updateCloudletProcessing();
+        
         double eventTimeToFinish = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
                 .getCloudletScheduler().cloudletResume(cloudletId);
 

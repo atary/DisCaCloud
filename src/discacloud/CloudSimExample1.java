@@ -128,7 +128,7 @@ public class CloudSimExample1 {
             
             NetworkTopology.addLink(datacenter0.getId(), broker.getId(), 10.0, 0.0001);
             NetworkTopology.addLink(datacenter1.getId(), broker.getId(), 10.0, 0);
-            NetworkTopology.addLink(datacenter0.getId(), datacenter1.getId(), 10.0, 300);
+            NetworkTopology.addLink(datacenter0.getId(), datacenter1.getId(), 10.0, 100);
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
