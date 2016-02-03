@@ -548,7 +548,7 @@ public class CloudSim {
 		} else {
 			queue_empty = true;
 			running = false;
-			printMessage("Simulation: No more future events");
+			printMessage(CloudSim.clock()+" Simulation: No more future events");
 		}
 
 		return queue_empty;

@@ -823,16 +823,17 @@ public class Datacenter extends SimEntity {
      * @post $none
      */
     protected void processCloudletResume(int cloudletId, int userId, int vmId, boolean ack) {
-        Log.printLine(CloudSim.clock()+": processCloudletResume");
-        double eventTime = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
+        Log.printLine(CloudSim.clock()+": processCloudletResume START");
+        double eventTimeToFinish = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
                 .getCloudletScheduler().cloudletResume(cloudletId);
 
         boolean status = false;
-        if (eventTime > 0.0) { // if this cloudlet is in the exec queue
+        if (eventTimeToFinish > 0.0) { // if this cloudlet is in the exec queue
             status = true;
-            if (eventTime > CloudSim.clock()) {
-                schedule(getId(), eventTime, CloudSimTags.VM_DATACENTER_EVENT);
-            }
+            //ATAKAN: This check is not necessary return value is time to finish. 
+            //if (eventTimeToFinish > CloudSim.clock()) {
+                schedule(getId(), eventTimeToFinish, CloudSimTags.VM_DATACENTER_EVENT);
+            //}
         }
 
         if (ack) {
@@ -846,6 +847,7 @@ public class Datacenter extends SimEntity {
             }
             sendNow(userId, CloudSimTags.CLOUDLET_RESUME_ACK, data);
         }
+        Log.printLine(CloudSim.clock()+": processCloudletResume END");
     }
 
     /**
