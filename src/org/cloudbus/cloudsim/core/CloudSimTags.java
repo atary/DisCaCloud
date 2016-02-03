@@ -269,7 +269,8 @@ public class CloudSimTags {
         /*ATAKAN*/
         
         public static final int REMOTE_DATA_REQUEST = BASE + 49;
-
+        
+        public static final int REMOTE_DATA_RETURN = BASE + 50;
 
         public static String TagText(int tagValue) {
             switch (tagValue) {
@@ -385,6 +386,8 @@ public class CloudSimTags {
                 return "NextCycle";
             case 49:
                 return "REMOTE_DATA_REQUEST";
+            case 50:
+                return "REMOTE_DATA_RETURN";
             default:
                 return "Invalid tag value";
             }

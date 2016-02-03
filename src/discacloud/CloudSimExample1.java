@@ -98,7 +98,7 @@ public class CloudSimExample1 {
             //Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
             // add the VM to the vmList
             vmlist.add(new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
-            vmlist.add(new Vm(vmid + 1, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
+            //vmlist.add(new Vm(vmid + 1, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
 
             // submit vm list to the broker
             broker.submitVmList(vmlist);
@@ -121,13 +121,14 @@ public class CloudSimExample1 {
             
             // add the cloudlet to the list
             cloudletList.add(cloudlet);
-            cloudletList.add(cloudlet2);
+            //cloudletList.add(cloudlet2);
 
             // submit cloudlet list to the broker
             broker.submitCloudletList(cloudletList);
             
-            NetworkTopology.addLink(datacenter0.getId(), broker.getId(), 10.0, 100);
-            NetworkTopology.addLink(datacenter1.getId(), broker.getId(), 10.0, 100);
+            NetworkTopology.addLink(datacenter0.getId(), broker.getId(), 10.0, 0.0001);
+            NetworkTopology.addLink(datacenter1.getId(), broker.getId(), 10.0, 0);
+            NetworkTopology.addLink(datacenter0.getId(), datacenter1.getId(), 10.0, 300);
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();

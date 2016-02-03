@@ -271,6 +271,10 @@ public class Datacenter extends SimEntity {
                 processDataRequest(ev);
                 break;
 
+            case CloudSimTags.REMOTE_DATA_RETURN:
+                processDataReturn(ev);
+                break;
+
             // other unknown tags are processed by this method
             default:
                 processOtherEvent(ev);
@@ -747,16 +751,19 @@ public class Datacenter extends SimEntity {
 
             // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
-                estimatedFinishTime += fileTransferTime + 0;
+                //estimatedFinishTime += fileTransferTime + 0;
                 //ATAKAN: An event must be created at the end of the pause time.
-                send(getId(), 100, CloudSimTags.VM_DATACENTER_EVENT);
+                sendNow(getId(), CloudSimTags.VM_DATACENTER_EVENT);
+
+                //ATAKAN: Pause cloudlet and request data
+                int[] data = new int[4];
+                data[0] = getId();
+                data[1] = cl.getCloudletId();
+                data[2] = cl.getUserId();
+                data[3] = cl.getVmId();
+                sendNow(getDataSourceId(), CloudSimTags.REMOTE_DATA_REQUEST, data);
+                processCloudletPause(cl.getCloudletId(), userId, vmId, false);
             }
-
-            //ATAKAN: Pause cloudlet and request data
-
-            //Şimdilik kendisine
-            send(getId(), 100, CloudSimTags.REMOTE_DATA_REQUEST, cl);
-            processCloudletPause(cl.getCloudletId(), userId, vmId, false);
 
             if (ack) {
                 int[] data = new int[3];
@@ -781,11 +788,24 @@ public class Datacenter extends SimEntity {
 
     /*
     Resume the cloudlet after the data is received.
-    */
+     */
     private void processDataRequest(SimEvent ev) {
-        Log.printLine(CloudSim.clock()+": processDataRequest");
-        Cloudlet cl = (Cloudlet) ev.getData();
-        processCloudletResume(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), false);
+        int[] data = (int[]) ev.getData();
+
+        if (true) { //Check if cache is actually here
+            sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
+        }
+        //processCloudletResume(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), false);
+    }
+
+    private void processDataReturn(SimEvent ev) {
+        int[] data = (int[]) ev.getData();
+        processCloudletResume(data[1], data[2], data[3], false);
+        scheduleNow(getId(), CloudSimTags.VM_DATACENTER_EVENT);
+    }
+
+    private int getDataSourceId() {
+        return 3;
     }
 
     /**
@@ -823,7 +843,7 @@ public class Datacenter extends SimEntity {
      * @post $none
      */
     protected void processCloudletResume(int cloudletId, int userId, int vmId, boolean ack) {
-        Log.printLine(CloudSim.clock()+": processCloudletResume START");
+        Log.printLine(CloudSim.clock() + " processCloudletResume " + cloudletId);
         double eventTimeToFinish = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
                 .getCloudletScheduler().cloudletResume(cloudletId);
 
@@ -832,7 +852,7 @@ public class Datacenter extends SimEntity {
             status = true;
             //ATAKAN: This check is not necessary return value is time to finish. 
             //if (eventTimeToFinish > CloudSim.clock()) {
-                schedule(getId(), eventTimeToFinish, CloudSimTags.VM_DATACENTER_EVENT);
+            schedule(getId(), eventTimeToFinish, CloudSimTags.VM_DATACENTER_EVENT);
             //}
         }
 
@@ -847,7 +867,6 @@ public class Datacenter extends SimEntity {
             }
             sendNow(userId, CloudSimTags.CLOUDLET_RESUME_ACK, data);
         }
-        Log.printLine(CloudSim.clock()+": processCloudletResume END");
     }
 
     /**
@@ -861,7 +880,7 @@ public class Datacenter extends SimEntity {
      * @post $none
      */
     protected void processCloudletPause(int cloudletId, int userId, int vmId, boolean ack) {
-        Log.printLine(CloudSim.clock()+": processCloudletPause");
+        Log.printLine(CloudSim.clock() + " processCloudletPause " + cloudletId);
         boolean status = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
                 .getCloudletScheduler().cloudletPause(cloudletId);
 
@@ -888,7 +907,7 @@ public class Datacenter extends SimEntity {
      * @post $none
      */
     protected void processCloudletCancel(int cloudletId, int userId, int vmId) {
-	Cloudlet cl = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId,userId).getCloudletScheduler().cloudletCancel(cloudletId);
+        Cloudlet cl = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId).getCloudletScheduler().cloudletCancel(cloudletId);
         sendNow(userId, CloudSimTags.CLOUDLET_CANCEL, cl);
     }
 
