@@ -319,7 +319,7 @@ public class ResCloudlet {
 			
                         //ATAKAN: Do not reset startTime when resumes
                         //if (status == Cloudlet.INEXEC || (prevStatus == Cloudlet.PAUSED && status == Cloudlet.RESUMED)) {
-                        if (status == Cloudlet.INEXEC && prevStatus == Cloudlet.QUEUED) {
+                        if (status == Cloudlet.INEXEC && prevStatus == Cloudlet.CREATED) {
 				startExecTime = clock;
 				cloudlet.setExecStartTime(startExecTime);
 			}
