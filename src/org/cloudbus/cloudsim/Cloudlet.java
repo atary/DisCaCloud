@@ -149,6 +149,23 @@ public class Cloudlet {
 	/** The required files. */
 	private List<String> requiredFiles = null;   // list of required filenames
 
+        // ATAKAN: Which data will be required in which position of execution.
+        private final List<CloudletDataRequest> dataRequests = new LinkedList<>();
+        
+        public void addDataRequest(int dataObjectID, long cloudletLenghtPos){
+            if(cloudletLenghtPos>cloudletLength)
+                throw new IllegalArgumentException("Data request position cannot be after the completion of cloudlet.");
+            else
+                dataRequests.add(new CloudletDataRequest(dataObjectID, cloudletLenghtPos));
+        }
+        
+        // ATAKAN: The id of the datacenter where the main storage exists.
+        private int mainStorageDcId;
+
+        public void setMainStorageDcId(int mainStorageDcId) {
+            this.mainStorageDcId = mainStorageDcId;
+        }     
+
 	/**
 	 * Allocates a new Cloudlet object. The Cloudlet length, input and output file sizes should be
 	 * greater than or equal to 1. By default this constructor sets the history of this object.

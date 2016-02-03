@@ -65,7 +65,7 @@ public class Datacenter extends SimEntity {
      * The scheduling interval.
      */
     private double schedulingInterval;
-
+    
     /**
      * Allocates a new PowerDatacenter object.
      *

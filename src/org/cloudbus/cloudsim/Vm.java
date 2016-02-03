@@ -126,7 +126,7 @@ public class Vm {
 		setCurrentAllocatedMips(null);
 		setCurrentAllocatedRam(0);
 		setCurrentAllocatedSize(0);
-	}
+	}        
 
 	/**
 	 * Updates the processing of cloudlets running on this VM.
