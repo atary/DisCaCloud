@@ -8,6 +8,7 @@ package org.cloudbus.cloudsim;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
 /**
  * Datacenter class is a CloudResource whose hostList are virtualized. It deals
@@ -66,6 +69,27 @@ public class Datacenter extends SimEntity {
      */
     private double schedulingInterval;
     
+    // ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
+    private HashSetValuedHashMap<Integer,Integer> cacheLocations;
+    
+    //ATAKAN: Since messages will be used these may not be required.
+    /*public void addCacheLocation(int dataObjectID, int datacenterID){
+        cacheLocations.put(dataObjectID, datacenterID);
+    }
+    
+    public void removeCacheLocation(int dataObjectID, int datacenterID){
+        cacheLocations.removeMapping(dataObjectID, datacenterID);
+    }*/
+    
+    private boolean mainStorage;
+
+    public void setAsMainStorage() {
+        mainStorage = true;
+    }
+    
+    //ATAKAN: <DataObjectID> Stores the caches that are stored in this datacenter.
+    private HashSet<Integer> caches;
+    
     /**
      * Allocates a new PowerDatacenter object.
      *
@@ -114,6 +138,10 @@ public class Datacenter extends SimEntity {
 
         // stores id of this class
         getCharacteristics().setId(super.getId());
+        
+        cacheLocations = new HashSetValuedHashMap<>();
+        mainStorage = false;
+        caches = new HashSet<>();
     }
 
     /**
