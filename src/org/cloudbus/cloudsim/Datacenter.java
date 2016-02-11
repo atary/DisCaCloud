@@ -69,7 +69,7 @@ public class Datacenter extends SimEntity {
      */
     private double schedulingInterval;
     
-    // ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
+    //ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
     private HashSetValuedHashMap<Integer,Integer> cacheLocations;
     
     //ATAKAN: Since messages will be used these may not be required.
@@ -87,8 +87,11 @@ public class Datacenter extends SimEntity {
         mainStorage = true;
     }
     
-    //ATAKAN: <DataObjectID> Stores the caches that are stored in this datacenter.
+    //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
     private HashSet<Integer> caches;
+    
+    //ATAKAN: <DatacenterID, Latency> latencies to the known non-neigbour datacenters.
+    private HashMap<Integer,Double> knownDistances;
     
     /**
      * Allocates a new PowerDatacenter object.
@@ -142,6 +145,7 @@ public class Datacenter extends SimEntity {
         cacheLocations = new HashSetValuedHashMap<>();
         mainStorage = false;
         caches = new HashSet<>();
+        knownDistances = new HashMap<>();
     }
 
     /**
