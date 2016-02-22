@@ -376,6 +376,7 @@ public class NetDatacenterBroker extends SimEntity {
 			NetworkVm vm = new NetworkVm(
 					vmid,
 					getId(),
+                                        0,
 					mips,
 					pesNumber,
 					ram,

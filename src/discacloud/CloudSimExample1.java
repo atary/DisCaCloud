@@ -97,7 +97,7 @@ public class CloudSimExample1 {
             // create VM
             //Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
             // add the VM to the vmList
-            vmlist.add(new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
+            vmlist.add(new Vm(vmid, brokerId, 200, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
             //vmlist.add(new Vm(vmid + 1, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
 
             // submit vm list to the broker

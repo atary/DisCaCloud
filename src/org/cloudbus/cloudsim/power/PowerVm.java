@@ -63,6 +63,7 @@ public class PowerVm extends Vm {
 	public PowerVm(
 			final int id,
 			final int userId,
+                        final long requestTime,
 			final double mips,
 			final int pesNumber,
 			final int ram,
@@ -72,7 +73,7 @@ public class PowerVm extends Vm {
 			final String vmm,
 			final CloudletScheduler cloudletScheduler,
 			final double schedulingInterval) {
-		super(id, userId, mips, pesNumber, ram, bw, size, vmm, cloudletScheduler);
+		super(id, userId, requestTime, mips, pesNumber, ram, bw, size, vmm, cloudletScheduler);
 		setSchedulingInterval(schedulingInterval);
 	}
 
