@@ -794,4 +794,9 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 		return 0;
 	}
 
+    @Override
+    public Cloudlet getCloudlet(int clId) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

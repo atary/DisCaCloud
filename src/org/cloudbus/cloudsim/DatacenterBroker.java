@@ -254,12 +254,18 @@ public class DatacenterBroker extends SimEntity {
             Log.printLine(CloudSim.clock() + ": " + getName() + ": VM #" + vmId
                     + " has been created in Datacenter #" + datacenterId + ", Host #"
                     + VmList.getById(getVmsCreatedList(), vmId).getHost().getId());
-            
+
             // ATAKAN: Always submit cloudlets of a VM when it is created.
             submitCloudlets(vmId);
         } else {
             Log.printLine(CloudSim.clock() + ": " + getName() + ": Creation of VM #" + vmId
                     + " failed in Datacenter #" + datacenterId);
+            for (int nextDatacenterId : getDatacenterIdsList()) {
+                if (!getDatacenterRequestedIdsList().contains(nextDatacenterId)) {
+                    createVmsInDatacenter(nextDatacenterId);
+                    return;
+                }
+            }
         }
 
         /*
@@ -298,18 +304,16 @@ public class DatacenterBroker extends SimEntity {
      * @pre ev != $null
      * @post $none
      */
-    
     // ATAKAN: Destroy VM when its cloudlet returns
-    
     protected void processCloudletReturn(SimEvent ev) {
-        
+
         Cloudlet cloudlet = (Cloudlet) ev.getData();
         getCloudletReceivedList().add(cloudlet);
         Vm vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
         Log.printLine(CloudSim.clock() + ": " + getName() + ": Cloudlet " + cloudlet.getCloudletId() + " received by VM #" + vm.getId() + " in " + vm.getHost().getDatacenter().getName() + " (" + vm.getHost().getDatacenter().getId() + ")");
 
         destroyVm(cloudlet.getVmId());
-        
+
         /*Cloudlet cloudlet = (Cloudlet) ev.getData();
         getCloudletReceivedList().add(cloudlet);
         Log.printLine(CloudSim.clock() + ": " + getName() + ": Cloudlet " + cloudlet.getCloudletId()
@@ -327,7 +331,7 @@ public class DatacenterBroker extends SimEntity {
             createVmsInDatacenter(0);
         }*/
     }
-    
+
     // ATAKAN: Destroy a VM
     private void destroyVm(int vmId) {
         Vm vm = VmList.getById(getVmsCreatedList(), vmId);
@@ -368,7 +372,15 @@ public class DatacenterBroker extends SimEntity {
             if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
                 Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
                         + " in " + datacenterName);
-                send(datacenterId, vm.getRequestTime(), CloudSimTags.VM_CREATE_ACK, vm);
+                double requestTime = vm.getRequestTime();
+                double clock = CloudSim.clock();
+                if (clock >= requestTime) {
+                    requestTime = 0;
+                } else {
+                    requestTime = requestTime - clock;
+                }
+                send(datacenterId, requestTime, CloudSimTags.VM_CREATE_ACK, vm);
+
                 requestedVms++;
             }
         }
@@ -385,7 +397,6 @@ public class DatacenterBroker extends SimEntity {
      * @pre $none
      * @post $none
      */
-    
     // ATAKAN: submit cloudlets to a single VM
     protected void submitCloudlets(int vmId) {
         Vm vm = VmList.getById(getVmsCreatedList(), vmId);

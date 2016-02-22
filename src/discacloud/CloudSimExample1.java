@@ -77,6 +77,7 @@ public class CloudSimExample1 {
             Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
             Datacenter datacenter1 = createDatacenter("Datacenter_1");
+            datacenter1.setAsMainStorage();
 
             // Third step: Create Broker
             DatacenterBroker broker = createBroker();
@@ -97,9 +98,9 @@ public class CloudSimExample1 {
             // create VM
             //Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
             // add the VM to the vmList
-            vmlist.add(new Vm(vmid, brokerId, 810, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
+            vmlist.add(new Vm(vmid, brokerId, 0, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
             vmlist.add(new Vm(vmid+1, brokerId, 0, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
-
+                    
             // submit vm list to the broker
             broker.submitVmList(vmlist);
 
@@ -119,6 +120,12 @@ public class CloudSimExample1 {
             cloudlet2.setUserId(brokerId);
             cloudlet.setVmId(vmid);
             cloudlet2.setVmId(vmid+1);
+            cloudlet.setMainStorageDcId(datacenter1.getId());
+            cloudlet2.setMainStorageDcId(datacenter1.getId());
+            cloudlet.addDataRequest(5);
+            cloudlet.addDataRequest(6);
+            cloudlet2.addDataRequest(5);
+            cloudlet2.addDataRequest(6);
             
             // add the cloudlet to the list
             cloudletList.add(cloudlet);

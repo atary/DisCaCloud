@@ -68,10 +68,10 @@ public class Datacenter extends SimEntity {
      * The scheduling interval.
      */
     private double schedulingInterval;
-    
+
     //ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
-    private HashSetValuedHashMap<Integer,Integer> cacheLocations;
-    
+    private HashSetValuedHashMap<Integer, Integer> cacheLocations;
+
     //ATAKAN: Since messages will be used these may not be required.
     /*public void addCacheLocation(int dataObjectID, int datacenterID){
         cacheLocations.put(dataObjectID, datacenterID);
@@ -80,19 +80,18 @@ public class Datacenter extends SimEntity {
     public void removeCacheLocation(int dataObjectID, int datacenterID){
         cacheLocations.removeMapping(dataObjectID, datacenterID);
     }*/
-    
     private boolean mainStorage;
 
     public void setAsMainStorage() {
         mainStorage = true;
     }
-    
+
     //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
     private HashSet<Integer> caches;
-    
+
     //ATAKAN: <DatacenterID, Latency> latencies to the known non-neigbour datacenters.
-    private HashMap<Integer,Double> knownDistances;
-    
+    private HashMap<Integer, Double> knownDistances;
+
     /**
      * Allocates a new PowerDatacenter object.
      *
@@ -141,7 +140,7 @@ public class Datacenter extends SimEntity {
 
         // stores id of this class
         getCharacteristics().setId(super.getId());
-        
+
         cacheLocations = new HashSetValuedHashMap<>();
         mainStorage = false;
         caches = new HashSet<>();
@@ -780,19 +779,28 @@ public class Datacenter extends SimEntity {
             Vm vm = host.getVm(vmId, userId);
             CloudletScheduler scheduler = vm.getCloudletScheduler();
             double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
-
             // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
-                //estimatedFinishTime += fileTransferTime + 0;
-
                 //ATAKAN: Pause cloudlet and request data 
-                int[] data = new int[4];
-                data[0] = getId();
-                data[1] = cl.getCloudletId();
-                data[2] = cl.getUserId();
-                data[3] = cl.getVmId();
-                sendNow(getDataSourceId(), CloudSimTags.REMOTE_DATA_REQUEST, data);
-                processCloudletPause(cl.getCloudletId(), userId, vmId, false);                
+                ArrayList<Integer> requiredData = cl.getRequiredData();
+                for (int dataObjectID : requiredData) {
+                    int[] data = new int[5];
+                    data[0] = getId();
+                    data[1] = cl.getCloudletId();
+                    data[2] = cl.getUserId();
+                    data[3] = cl.getVmId();
+                    data[4] = dataObjectID;
+                    int dataSourceId = getDataCacheId(dataObjectID);
+                    dataSourceId = dataSourceId < 0 ? cl.getMainStorageDcId() : dataSourceId;
+                    sendNow(dataSourceId, CloudSimTags.REMOTE_DATA_REQUEST, data);
+                }
+                if (!requiredData.isEmpty()) {
+                    processCloudletPause(cl.getCloudletId(), userId, vmId, false);
+
+                } else {
+                    estimatedFinishTime += fileTransferTime;
+                    send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);
+                }
             }
 
             if (ack) {
@@ -816,24 +824,33 @@ public class Datacenter extends SimEntity {
         checkCloudletCompletion();
     }
 
-    /*
-    Resume the cloudlet after the data is received.
-     */
+    // ATAKAN: Answer if data is here.
     private void processDataRequest(SimEvent ev) {
         int[] data = (int[]) ev.getData();
 
-        if (true) { //Check if cache is actually here
+        if (mainStorage || caches.contains((int) data[4])) { //Check if cache is actually here
+            //System.out.println(getId() + ": " + (int) data[4] + " is here.");
             sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
+        }
+        else{
+            // Data is not here
         }
     }
 
+    // ATAKAN: Resume the cloudlet after the data is received.
     private void processDataReturn(SimEvent ev) {
         int[] data = (int[]) ev.getData();
-        processCloudletResume(data[1], data[2], data[3], false);
+        //System.out.println(getId() + ": " + data[4] + " is received.");
+        Cloudlet cl = getVmAllocationPolicy().getHost(data[3], data[2]).getVm(data[3], data[2]).getCloudletScheduler().getCloudlet(data[1]);
+        cl.addDataReceive(data[4]);
+        if (cl.allRequiredDataAreReceived()) {
+            //System.out.println(getId() + ": " + "All received.");
+            processCloudletResume(data[1], data[2], data[3], false);
+        }
     }
 
-    private int getDataSourceId() {
-        return 3;
+    private int getDataCacheId(int dataObjectID) {
+        return -1;
     }
 
     /**
@@ -874,7 +891,7 @@ public class Datacenter extends SimEntity {
         Log.printLine(CloudSim.clock() + " processCloudletResume " + cloudletId);
         //ATAKAN: Always update paused cloudlets first.
         updateCloudletProcessing();
-        
+
         double eventTimeToFinish = getVmAllocationPolicy().getHost(vmId, userId).getVm(vmId, userId)
                 .getCloudletScheduler().cloudletResume(cloudletId);
 

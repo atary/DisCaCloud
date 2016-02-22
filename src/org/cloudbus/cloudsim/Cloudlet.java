@@ -27,7 +27,7 @@ public class Cloudlet {
     /**
      * The User or Broker ID. It is advisable that broker set this ID with its
      * own ID, so that CloudResource returns to it after the execution.
-	 *
+     *
      */
     private int userId;
 
@@ -211,7 +211,7 @@ public class Cloudlet {
     private List<String> requiredFiles = null;   // list of required filenames
 
     // ATAKAN: Which data will be required in which position of execution.
-    private final List<CloudletDataRequest> dataRequests = new LinkedList<>();
+    /*private final List<CloudletDataRequest> dataRequests = new LinkedList<>();
 
     public void addDataRequest(int dataObjectID, long cloudletLenghtPos) {
         if (cloudletLenghtPos > cloudletLength) {
@@ -219,6 +219,39 @@ public class Cloudlet {
         } else {
             dataRequests.add(new CloudletDataRequest(dataObjectID, cloudletLenghtPos));
         }
+    }*/
+    // ATAKAN: Which data will be required
+    private final ArrayList<Integer> requiredData = new ArrayList<>();
+
+    public void addDataRequest(int dataObjectID) {
+        requiredData.add(dataObjectID);
+    }
+
+    public ArrayList<Integer> getRequiredData() {
+        return requiredData;
+    }
+
+    // ATAKAN: Which data has been received
+    private final ArrayList<Integer> receivedData = new ArrayList<>();
+
+    public void addDataReceive(int dataObjectID) {
+        receivedData.add(dataObjectID);
+    }
+
+    public ArrayList<Integer> getReceivedData() {
+        return receivedData;
+    }
+
+    public boolean allRequiredDataAreReceived() {
+        if (receivedData.size() != requiredData.size()) {
+            return false;
+        }
+        for (int data : requiredData) {
+            if (!receivedData.contains(data)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ATAKAN: The id of the datacenter where the main storage exists.
@@ -226,6 +259,10 @@ public class Cloudlet {
 
     public void setMainStorageDcId(int mainStorageDcId) {
         this.mainStorageDcId = mainStorageDcId;
+    }
+
+    public int getMainStorageDcId() {
+        return mainStorageDcId;
     }
 
     /**
@@ -272,7 +309,7 @@ public class Cloudlet {
         vmId = -1;
         accumulatedBwCost = 0.0;
         costPerBw = 0.0;
-
+        mainStorageDcId = -1;
         requiredFiles = new LinkedList<String>();
     }
 
@@ -943,9 +980,7 @@ public class Cloudlet {
      *
      * @param newStatus the status code of this Cloudlet
      * @throws Exception Invalid range of Cloudlet status
-     * @pre newStatus >= 0 && newStatus <= 8
-	 * @
-     * post $none
+     * @pre newStatus >= 0 && newStatus <= 8 @ post $none
      */
     public void setCloudletStatus(final int newStatus) throws Exception {
         // if the new status is same as current one, then ignore the rest

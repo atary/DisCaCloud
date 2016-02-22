@@ -350,6 +350,24 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		}
 		return -1;
 	}
+        
+        // ATAKAN: get specified cloudlet
+        @Override
+	public Cloudlet getCloudlet(int cloudletId) {
+		for (ResCloudlet rcl : getCloudletExecList()) {
+			if (rcl.getCloudletId() == cloudletId) {
+				return rcl.getCloudlet();
+			}
+		}
+
+		for (ResCloudlet rcl : getCloudletPausedList()) {
+			if (rcl.getCloudletId() == cloudletId) {
+				return rcl.getCloudlet();
+			}
+		}
+
+		return null;
+	}
 
 	/**
 	 * Get utilization created by all cloudlets.

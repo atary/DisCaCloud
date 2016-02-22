@@ -119,6 +119,8 @@ public abstract class CloudletScheduler {
 	 * @post $none
 	 */
 	public abstract int getCloudletStatus(int clId);
+        
+        public abstract Cloudlet getCloudlet(int clId); 
 
 	/**
 	 * Informs about completion of some cloudlet in the VM managed by this scheduler.
