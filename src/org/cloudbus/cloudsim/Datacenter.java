@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
@@ -304,6 +305,10 @@ public class Datacenter extends SimEntity {
 
             case CloudSimTags.REMOTE_DATA_RETURN:
                 processDataReturn(ev);
+                break;
+
+            case CloudSimTags.REMOTE_DATA_NOT_FOUND:
+                processDataNotFound(ev);
                 break;
 
             // other unknown tags are processed by this method
@@ -784,15 +789,7 @@ public class Datacenter extends SimEntity {
                 //ATAKAN: Pause cloudlet and request data 
                 ArrayList<Integer> requiredData = cl.getRequiredData();
                 for (int dataObjectID : requiredData) {
-                    int[] data = new int[5];
-                    data[0] = getId();
-                    data[1] = cl.getCloudletId();
-                    data[2] = cl.getUserId();
-                    data[3] = cl.getVmId();
-                    data[4] = dataObjectID;
-                    int dataSourceId = getDataCacheId(dataObjectID);
-                    dataSourceId = dataSourceId < 0 ? cl.getMainStorageDcId() : dataSourceId;
-                    sendNow(dataSourceId, CloudSimTags.REMOTE_DATA_REQUEST, data);
+                    sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), cl.getMainStorageDcId(), dataObjectID);
                 }
                 if (!requiredData.isEmpty()) {
                     processCloudletPause(cl.getCloudletId(), userId, vmId, false);
@@ -824,6 +821,19 @@ public class Datacenter extends SimEntity {
         checkCloudletCompletion();
     }
 
+    private void sendDataRequest(int cloudletId, int userId, int vmId, int storageId, int dataObjectID) {
+        int[] data = new int[6];
+        data[0] = getId();
+        data[1] = cloudletId;
+        data[2] = userId;
+        data[3] = vmId;
+        data[4] = dataObjectID;
+        data[5] = storageId;
+        int dataSourceId = getDataCacheId(dataObjectID);
+        dataSourceId = dataSourceId < 0 ? storageId : dataSourceId;
+        sendNow(dataSourceId, CloudSimTags.REMOTE_DATA_REQUEST, data);
+    }
+
     // ATAKAN: Answer if data is here.
     private void processDataRequest(SimEvent ev) {
         int[] data = (int[]) ev.getData();
@@ -831,9 +841,8 @@ public class Datacenter extends SimEntity {
         if (mainStorage || caches.contains((int) data[4])) { //Check if cache is actually here
             //System.out.println(getId() + ": " + (int) data[4] + " is here.");
             sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
-        }
-        else{
-            // Data is not here
+        } else {
+            sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
     }
 
@@ -849,7 +858,31 @@ public class Datacenter extends SimEntity {
         }
     }
 
+    private void processDataNotFound(SimEvent ev) {
+        int[] data = (int[]) ev.getData();
+        int source = ev.getSource();
+        cacheLocations.removeMapping(data[4], source);
+        sendDataRequest(data[1], data[2], data[3], data[5], data[4]);
+    }
+
     private int getDataCacheId(int dataObjectID) {
+        double min = Double.MAX_VALUE;
+        int minId = -1;
+        if (cacheLocations.containsKey(dataObjectID)) {
+            Set<Integer> locs = cacheLocations.get(dataObjectID);
+            for (int loc : locs) {
+                if (knownDistances.containsKey(loc) && knownDistances.get(loc) < min) {
+                    min = knownDistances.get(loc);
+                    minId = loc;
+                }
+            }
+            if (minId > 0) {
+                return minId;
+            }
+            else if(!locs.isEmpty()){
+                return locs.iterator().next();
+            }
+        }
         return -1;
     }
 

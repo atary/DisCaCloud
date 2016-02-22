@@ -271,6 +271,8 @@ public class CloudSimTags {
         public static final int REMOTE_DATA_REQUEST = BASE + 49;
         
         public static final int REMOTE_DATA_RETURN = BASE + 50;
+        
+        public static final int REMOTE_DATA_NOT_FOUND = BASE + 51;
 
         public static String TagText(int tagValue) {
             switch (tagValue) {
@@ -388,6 +390,8 @@ public class CloudSimTags {
                 return "REMOTE_DATA_REQUEST";
             case 50:
                 return "REMOTE_DATA_RETURN";
+            case 51:
+                return "REMOTE_DATA_NOT_FOUND";
             default:
                 return "Invalid tag value";
             }
