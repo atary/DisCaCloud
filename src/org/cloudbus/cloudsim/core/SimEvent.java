@@ -24,6 +24,8 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 
 	/** time at which event should occur **/
 	private final double time;
+        
+        private final double creationTime;
 
 	/** time that the event was removed from the queue for service **/
 	private double endWaitingTime;
@@ -63,6 +65,7 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 		entDst = -1;
 		tag = -1;
 		data = null;
+                creationTime = CloudSim.clock();
 	}
 
 	// ------------------- PACKAGE LEVEL METHODS --------------------------
@@ -73,6 +76,8 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 		entDst = dest;
 		this.tag = tag;
 		data = edata;
+                creationTime = CloudSim.clock();
+
 	}
 
 	SimEvent(int evtype, double time, int src) {
@@ -82,6 +87,7 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 		entDst = -1;
 		tag = -1;
 		data = null;
+                creationTime = CloudSim.clock();
 	}
 
 	protected void setSerial(long serial) {
@@ -188,6 +194,10 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
 	 */
 	public double endWaitingTime() {
 		return endWaitingTime;
+	}
+        
+        public double creationTime() {
+		return creationTime;
 	}
 
 	/**

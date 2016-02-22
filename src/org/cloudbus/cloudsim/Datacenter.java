@@ -171,7 +171,6 @@ public class Datacenter extends SimEntity {
     @Override
     public void processEvent(SimEvent ev) {
         int srcId = -1;
-
         switch (ev.getTag()) {
             // Resource characteristics inquiry
             case CloudSimTags.RESOURCE_CHARACTERISTICS:
@@ -836,6 +835,8 @@ public class Datacenter extends SimEntity {
 
     // ATAKAN: Answer if data is here.
     private void processDataRequest(SimEvent ev) {
+        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
+        
         int[] data = (int[]) ev.getData();
 
         if (mainStorage || caches.contains((int) data[4])) { //Check if cache is actually here
@@ -848,6 +849,7 @@ public class Datacenter extends SimEntity {
 
     // ATAKAN: Resume the cloudlet after the data is received.
     private void processDataReturn(SimEvent ev) {
+        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
         int[] data = (int[]) ev.getData();
         //System.out.println(getId() + ": " + data[4] + " is received.");
         Cloudlet cl = getVmAllocationPolicy().getHost(data[3], data[2]).getVm(data[3], data[2]).getCloudletScheduler().getCloudlet(data[1]);
@@ -859,6 +861,7 @@ public class Datacenter extends SimEntity {
     }
 
     private void processDataNotFound(SimEvent ev) {
+        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
         int[] data = (int[]) ev.getData();
         int source = ev.getSource();
         cacheLocations.removeMapping(data[4], source);
