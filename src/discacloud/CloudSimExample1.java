@@ -97,8 +97,8 @@ public class CloudSimExample1 {
             // create VM
             //Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
             // add the VM to the vmList
-            vmlist.add(new Vm(vmid, brokerId, 200, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
-            //vmlist.add(new Vm(vmid + 1, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
+            vmlist.add(new Vm(vmid, brokerId, 810, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
+            vmlist.add(new Vm(vmid+1, brokerId, 0, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
 
             // submit vm list to the broker
             broker.submitVmList(vmlist);
@@ -117,11 +117,12 @@ public class CloudSimExample1 {
             cloudlet.setUserId(brokerId);
             Cloudlet cloudlet2 = new Cloudlet(id+1, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
             cloudlet2.setUserId(brokerId);
-            //cloudlet.setVmId(vmid);
+            cloudlet.setVmId(vmid);
+            cloudlet2.setVmId(vmid+1);
             
             // add the cloudlet to the list
             cloudletList.add(cloudlet);
-            //cloudletList.add(cloudlet2);
+            cloudletList.add(cloudlet2);
 
             // submit cloudlet list to the broker
             broker.submitCloudletList(cloudletList);
