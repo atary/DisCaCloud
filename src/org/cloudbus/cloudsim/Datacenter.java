@@ -776,6 +776,7 @@ public class Datacenter extends SimEntity {
             int userId = cl.getUserId();
             int vmId = cl.getVmId();
 
+            // ATAKAN: add main storage ID to known caches.
             // time to transfer the files
             double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 
@@ -788,7 +789,8 @@ public class Datacenter extends SimEntity {
                 //ATAKAN: Pause cloudlet and request data 
                 ArrayList<Integer> requiredData = cl.getRequiredData();
                 for (int dataObjectID : requiredData) {
-                    sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), cl.getMainStorageDcId(), dataObjectID);
+                    cacheLocations.put(dataObjectID, cl.getMainStorageDcId());
+                    sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), dataObjectID);
                 }
                 if (!requiredData.isEmpty()) {
                     processCloudletPause(cl.getCloudletId(), userId, vmId, false);
@@ -820,23 +822,21 @@ public class Datacenter extends SimEntity {
         checkCloudletCompletion();
     }
 
-    private void sendDataRequest(int cloudletId, int userId, int vmId, int storageId, int dataObjectID) {
-        int[] data = new int[6];
+    private void sendDataRequest(int cloudletId, int userId, int vmId, int dataObjectID) {
+        int[] data = new int[5];
         data[0] = getId();
         data[1] = cloudletId;
         data[2] = userId;
         data[3] = vmId;
         data[4] = dataObjectID;
-        data[5] = storageId;
-        int dataSourceId = getDataCacheId(dataObjectID);
-        dataSourceId = dataSourceId < 0 ? storageId : dataSourceId;
-        sendNow(dataSourceId, CloudSimTags.REMOTE_DATA_REQUEST, data);
+        //dataSourceId = dataSourceId < 0 ? storageId : dataSourceId;
+        sendNow(getDataCacheId(dataObjectID), CloudSimTags.REMOTE_DATA_REQUEST, data);
     }
 
     // ATAKAN: Answer if data is here.
     private void processDataRequest(SimEvent ev) {
-        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
-        
+        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
+
         int[] data = (int[]) ev.getData();
 
         if (mainStorage || caches.contains((int) data[4])) { //Check if cache is actually here
@@ -847,9 +847,9 @@ public class Datacenter extends SimEntity {
         }
     }
 
-    // ATAKAN: Resume the cloudlet after the data is received.
+    // ATAKAN: Resume the cloudlet after all data are received.
     private void processDataReturn(SimEvent ev) {
-        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
+        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
         int[] data = (int[]) ev.getData();
         //System.out.println(getId() + ": " + data[4] + " is received.");
         Cloudlet cl = getVmAllocationPolicy().getHost(data[3], data[2]).getVm(data[3], data[2]).getCloudletScheduler().getCloudlet(data[1]);
@@ -861,18 +861,18 @@ public class Datacenter extends SimEntity {
     }
 
     private void processDataNotFound(SimEvent ev) {
-        knownDistances.put(ev.getSource(), CloudSim.clock()-ev.creationTime());
+        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
         int[] data = (int[]) ev.getData();
         int source = ev.getSource();
         cacheLocations.removeMapping(data[4], source);
-        sendDataRequest(data[1], data[2], data[3], data[5], data[4]);
+        sendDataRequest(data[1], data[2], data[3], data[4]);
     }
 
     private int getDataCacheId(int dataObjectID) {
         double min = Double.MAX_VALUE;
         int minId = -1;
+        Set<Integer> locs = cacheLocations.get(dataObjectID);
         if (cacheLocations.containsKey(dataObjectID)) {
-            Set<Integer> locs = cacheLocations.get(dataObjectID);
             for (int loc : locs) {
                 if (knownDistances.containsKey(loc) && knownDistances.get(loc) < min) {
                     min = knownDistances.get(loc);
@@ -882,11 +882,8 @@ public class Datacenter extends SimEntity {
             if (minId > 0) {
                 return minId;
             }
-            else if(!locs.isEmpty()){
-                return locs.iterator().next();
-            }
         }
-        return -1;
+        return locs.iterator().next();
     }
 
     /**
