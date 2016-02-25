@@ -74,6 +74,8 @@ public class CloudSimExample1 {
             // Second step: Create Datacenters
             // Datacenters are the resource providers in CloudSim. We need at
             // list one of them to run a CloudSim simulation
+            Datacenter.setCacheQuantum(50);
+            
             Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
             Datacenter datacenter1 = createDatacenter("Datacenter_1");

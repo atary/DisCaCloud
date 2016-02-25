@@ -70,6 +70,13 @@ public class Datacenter extends SimEntity {
      */
     private double schedulingInterval;
 
+    // ATAKAN: Period of cache operation checks
+    private static double cacheQuantum;
+
+    public static void setCacheQuantum(double cacheQuantum) {
+        Datacenter.cacheQuantum = cacheQuantum;
+    }
+
     //ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
     private HashSetValuedHashMap<Integer, Integer> cacheLocations;
 
@@ -176,6 +183,13 @@ public class Datacenter extends SimEntity {
             case CloudSimTags.RESOURCE_CHARACTERISTICS:
                 srcId = ((Integer) ev.getData()).intValue();
                 sendNow(srcId, ev.getTag(), getCharacteristics());
+                // ATAKAN: Schedule the first cache check
+                send(getId(), cacheQuantum, CloudSimTags.CHECK_DEMAND_FOR_CACHES);
+
+                break;
+
+            case CloudSimTags.CHECK_DEMAND_FOR_CACHES:
+                checkCacheConditions();
                 break;
 
             // Resource dynamic info inquiry
@@ -884,6 +898,18 @@ public class Datacenter extends SimEntity {
             }
         }
         return locs.iterator().next();
+    }
+
+    // ATAKAN: check for cache operation conditions and initiate the selected operation.
+    private void checkCacheConditions() {
+        if (mainStorage) {
+            //Only create is possible
+        } else {
+            //Duplicate, migrate and remove are possible
+        }
+        // Schedule the next check
+        send(getId(), cacheQuantum, CloudSimTags.CHECK_DEMAND_FOR_CACHES);
+        //Log.printLine(CloudSim.clock() + " CACHE CHECK!");
     }
 
     /**
