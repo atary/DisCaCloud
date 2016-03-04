@@ -79,7 +79,8 @@ public class CloudSimExample1 {
             Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
             Datacenter datacenter1 = createDatacenter("Datacenter_1");
-            datacenter1.setAsMainStorage();
+            datacenter1.addDataToMainStorage(5,1000);
+            datacenter1.addDataToMainStorage(6,1000);
 
             // Third step: Create Broker
             DatacenterBroker broker = createBroker();

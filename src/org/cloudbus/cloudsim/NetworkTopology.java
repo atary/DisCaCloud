@@ -242,12 +242,12 @@ public class NetworkTopology {
     }
     
     // ATAKAN: Returns the node preceeding the destination on the shortest path from source to destination.
-    public int getSourceNeighbour(int sourceId, int destinationId) {
+    public static int getSourceNeighbour(int sourceId, int destinationId) {
         return delayMatrix.getSourceNeighbour(sourceId, destinationId);
     }
     
     // ATAKAN: Retuns IDs of all neighbours of the destination.
-    private ArrayList<Integer> getNeighbours(int destinationId){
+    public static ArrayList<Integer> getNeighbours(int destinationId){
         ArrayList<Integer> IDs = new ArrayList<>();
         for(int i=0; i<bwMatrix.length; i++){
             if(bwMatrix[i][destinationId]>0){

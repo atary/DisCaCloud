@@ -88,17 +88,22 @@ public class Datacenter extends SimEntity {
     public void removeCacheLocation(int dataObjectID, int datacenterID){
         cacheLocations.removeMapping(dataObjectID, datacenterID);
     }*/
+    
     private boolean mainStorage;
 
-    public void setAsMainStorage() {
+    public void addDataToMainStorage(int dataObjectID, int length) {
         mainStorage = true;
+        caches.add(new Cache(dataObjectID, length));
     }
 
     //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
-    private HashSet<Integer> caches;
+    private HashSet<Cache> caches;
 
     //ATAKAN: <DatacenterID, Latency> latencies to the known non-neigbour datacenters.
     private HashMap<Integer, Double> knownDistances;
+    
+    //ATAKAN: <DataObjectID, NeighbourDatacenterID> Log of requests received from neighbours.
+    private HashSet<Request> requests;
 
     /**
      * Allocates a new PowerDatacenter object.
@@ -150,9 +155,10 @@ public class Datacenter extends SimEntity {
         getCharacteristics().setId(super.getId());
 
         cacheLocations = new HashSetValuedHashMap<>();
-        mainStorage = false;
         caches = new HashSet<>();
         knownDistances = new HashMap<>();
+        requests = new HashSet<>();
+        mainStorage = false;
     }
 
     /**
@@ -852,10 +858,20 @@ public class Datacenter extends SimEntity {
         knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
 
         int[] data = (int[]) ev.getData();
-
-        if (mainStorage || caches.contains((int) data[4])) { //Check if cache is actually here
+        
+        boolean found = false; //Check if cache is actually here
+        if(!found){
+            for(Cache c : caches){
+                if(c.dataObjectID==data[4]){
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (found) { 
             //System.out.println(getId() + ": " + (int) data[4] + " is here.");
             sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
+            requests.add(new Request(ev.creationTime(), NetworkTopology.getSourceNeighbour(data[0], getId()), getId(), data[4], 1));
         } else {
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
@@ -1340,6 +1356,37 @@ public class Datacenter extends SimEntity {
      */
     protected void setSchedulingInterval(double schedulingInterval) {
         this.schedulingInterval = schedulingInterval;
+    }
+
+    private static class Cache {
+        
+        private int dataObjectID;
+        private int length;
+        //History
+
+        public Cache(int dataObjectID, int length) {
+            this.dataObjectID = dataObjectID;
+            this.length = length;
+        }
+        
+    }
+
+    private static class Request {
+        private double time;
+        private double latency;
+        private int source;
+        private int destination;
+        private int dataObjectID;
+        private int length;
+
+        public Request(double creationTime, int source, int destination, int dataObjectID, int length) {
+            time = CloudSim.clock();
+            this.latency = time-creationTime;
+            this.source = source;
+            this.destination = destination;
+            this.dataObjectID = dataObjectID;
+            this.length = length;
+        }
     }
 
 }
