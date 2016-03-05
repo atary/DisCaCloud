@@ -72,14 +72,6 @@ public class Datacenter extends SimEntity {
     //ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
     private HashSetValuedHashMap<Integer, Integer> cacheLocations;
 
-    //ATAKAN: Since messages will be used these may not be required.
-    /*public void addCacheLocation(int dataObjectID, int datacenterID){
-        cacheLocations.put(dataObjectID, datacenterID);
-    }
-    
-    public void removeCacheLocation(int dataObjectID, int datacenterID){
-        cacheLocations.removeMapping(dataObjectID, datacenterID);
-    }*/
     private boolean mainStorage;
 
     public void addDataToMainStorage(int dataObjectID, int length) {
@@ -319,6 +311,10 @@ public class Datacenter extends SimEntity {
 
             case CloudSimTags.REMOTE_DATA_NOT_FOUND:
                 processDataNotFound(ev);
+                break;
+                
+            case CloudSimTags.CREATE_CACHE:
+                processCacheCreation(ev);
                 break;
 
             // other unknown tags are processed by this method
@@ -937,6 +933,14 @@ public class Datacenter extends SimEntity {
             }
         }
         return demand * CloudSim.getAggression();
+    }
+    
+    //ATAKAN: Create a new cache in this location
+    private void processCacheCreation(SimEvent ev) {
+        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
+        Cache c = (Cache) ev.getData();
+        caches.add(c);
+        //Submit cache location updates to request sources and neighbours
     }
 
     /**
