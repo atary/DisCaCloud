@@ -57,6 +57,9 @@ public class CloudSim {
     public static double getCacheQuantum() {
         return cacheQuantum;
     }
+    
+    //ATAKAN: Could be converted to messaging but it would make no difference.
+    public static HashMap<Integer, Double> DcCosts = new HashMap<>();
 
     /**
      * The Constant CLOUDSIM_VERSION_STRING.

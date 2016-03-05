@@ -318,7 +318,9 @@ public class CloudSimTags {
     
     public static final int ADD_CACHE_LOCATION = BASE + 54;
     
-    public static final int REMOVE_CACHE_LOCATION = BASE + 55;    
+    public static final int REMOVE_CACHE_LOCATION = BASE + 55;
+    
+    public static final int REMOVE_CACHE = BASE + 56;
 
     public static String TagText(int tagValue) {
         switch (tagValue) {
@@ -449,6 +451,8 @@ public class CloudSimTags {
                 return "ADD_CACHE_LOCATION";
             case 55:
                 return "REMOVE_CACHE_LOCATION";
+            case 56:
+                return "REMOVE_CACHE";
             default:
                 return "Invalid tag value";
         }

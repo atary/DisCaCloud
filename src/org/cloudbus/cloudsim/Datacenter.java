@@ -317,6 +317,10 @@ public class Datacenter extends SimEntity {
                 processCacheCreation(ev);
                 break;
 
+            case CloudSimTags.REMOVE_CACHE:
+                processCacheRemoval(ev);
+                break;
+
             case CloudSimTags.ADD_CACHE_LOCATION:
                 knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
                 if (ev.getSource() != getId()) {
@@ -829,7 +833,7 @@ public class Datacenter extends SimEntity {
                     processCloudletPause(cl.getCloudletId(), userId, vmId, false);
                 } else {
                     estimatedFinishTime += fileTransferTime;
-                    send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);
+                    send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT); //Why not schedule?
                 }
             }
 
@@ -934,16 +938,42 @@ public class Datacenter extends SimEntity {
     private void checkCacheConditions() {
         ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
         if (mainStorage) {
-            for (int n : neighbours) {
-                for (Cache c : caches) {
-                    double cost = getCharacteristics().getCostPerSecond();
-                    if (getDemand(c.dataObjectID, n, 0) > cost) {
+            for (Cache c : caches) {
+                for (int n : neighbours) {
+                    double neighbourCost = CloudSim.DcCosts.getOrDefault(n, Double.MAX_VALUE);
+                    if (getDemand(c.dataObjectID, n, 0) > neighbourCost) { //Create Decision
                         send(n, c.length / NetworkTopology.getBw(), CloudSimTags.CREATE_CACHE, c);
                     }
                 }
             }
         } else {
-            //Duplicate, migrate and remove are possible
+            for (Cache c : caches) {
+                for (int n : neighbours) {
+                    double neighbourCost = CloudSim.DcCosts.getOrDefault(n, Double.MAX_VALUE);
+                    double localCost = CloudSim.DcCosts.getOrDefault(getId(), Double.MAX_VALUE);
+                    double neighbourLatency = NetworkTopology.getDelay(getId(), n);
+                    double neighbourDemand = getDemand(c.dataObjectID, n, 0);
+                    double neighbourDecreasedDemand = getDemand(c.dataObjectID, n, -neighbourLatency);
+                    double otherNeighboursDemand = 0;
+                    double otherNeighboursIncreasedDemand = 0;
+                    for (int an : neighbours) {
+                        if (an != n) {
+                            otherNeighboursDemand += getDemand(c.dataObjectID, an, 0);
+                            otherNeighboursIncreasedDemand += getDemand(c.dataObjectID, an, neighbourLatency);
+                        }
+                    }
+                    double allNeighboursDemand = neighbourDemand + otherNeighboursDemand;
+                    double transferDelay = c.length / NetworkTopology.getBw();
+                    if (allNeighboursDemand - (otherNeighboursIncreasedDemand + neighbourDecreasedDemand) > neighbourCost - localCost) { //Migrate Decision
+                        schedule(getId(), NetworkTopology.getDelay(getId(), n) + transferDelay, CloudSimTags.REMOVE_CACHE, c); //Cache will stay here until it is created.
+                        send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
+                    } else if (neighbourDemand > neighbourCost && otherNeighboursDemand > localCost) { //Duplicate Decision
+                        send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
+                    } else if (allNeighboursDemand < localCost) { //Remove Decision
+                        scheduleNow(getId(), CloudSimTags.REMOVE_CACHE, c);
+                    }
+                }
+            }
         }
         // Clear log for the current interval and schedule the next check
         requests.clear();
@@ -965,16 +995,35 @@ public class Datacenter extends SimEntity {
     private void processCacheCreation(SimEvent ev) {
         knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
         Cache c = (Cache) ev.getData();
+
+        //TODO: what if capacity is not enough
         caches.add(c);
-        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
 
         //Notify other DCs for the new cache
+        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
         for (int n : neighbours) {
             sendNow(n, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
         }
         for (Request r : requests) {
             if (r.dataObjectID == c.dataObjectID && !neighbours.contains(r.originalSource)) {
                 sendNow(r.originalSource, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
+            }
+        }
+    }
+
+    //ATAKAN: Remove a cache from this location
+    private void processCacheRemoval(SimEvent ev) {
+        Cache c = (Cache) ev.getData();
+        caches.remove(c);
+
+        //Notify other DCs for the removal
+        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
+        for (int n : neighbours) {
+            sendNow(n, CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
+        }
+        for (Request r : requests) {
+            if (r.dataObjectID == c.dataObjectID && !neighbours.contains(r.originalSource)) {
+                sendNow(r.originalSource, CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
             }
         }
     }
@@ -1418,6 +1467,29 @@ public class Datacenter extends SimEntity {
         public Cache(int dataObjectID, int length) {
             this.dataObjectID = dataObjectID;
             this.length = length;
+        }
+
+        @Override
+        public int hashCode() {
+            return dataObjectID;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Cache other = (Cache) obj;
+            if (this.dataObjectID != other.dataObjectID) {
+                return false;
+            }
+            return true;
         }
 
     }
