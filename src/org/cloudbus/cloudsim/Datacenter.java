@@ -312,9 +312,13 @@ public class Datacenter extends SimEntity {
             case CloudSimTags.REMOTE_DATA_NOT_FOUND:
                 processDataNotFound(ev);
                 break;
-                
+
             case CloudSimTags.CREATE_CACHE:
                 processCacheCreation(ev);
+                break;
+
+            case CloudSimTags.ADD_CACHE_LOCATION:
+                processAddCacheLocation(ev);
                 break;
 
             // other unknown tags are processed by this method
@@ -859,7 +863,7 @@ public class Datacenter extends SimEntity {
         if (found) {
             //System.out.println(getId() + ": " + (int) data[4] + " is here.");
             send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
-            requests.add(new Request(ev.creationTime(), NetworkTopology.getSourceNeighbour(data[0], getId()), getId(), data[4], 1));
+            requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], 1));
         } else {
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
@@ -928,19 +932,32 @@ public class Datacenter extends SimEntity {
     private double getDemand(int dataObjectId, int neighbourId, double latencyOffset) {
         double demand = 0;
         for (Request r : requests) {
-            if (r.dataObjectID == dataObjectId && r.source == neighbourId) {
+            if (r.dataObjectID == dataObjectId && r.neighbourSource == neighbourId) {
                 demand += (r.latency + latencyOffset);
             }
         }
         return demand * CloudSim.getAggression();
     }
-    
+
     //ATAKAN: Create a new cache in this location
     private void processCacheCreation(SimEvent ev) {
         knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
         Cache c = (Cache) ev.getData();
         caches.add(c);
-        //Submit cache location updates to request sources and neighbours
+        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
+        for (int n : neighbours) {
+            sendNow(n, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
+        }
+        for (Request r : requests) {
+            if (r.dataObjectID == c.dataObjectID && !neighbours.contains(r.originalSource)) {
+                sendNow(r.originalSource, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
+            }
+        }
+    }
+
+    private void processAddCacheLocation(SimEvent ev) {
+        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
+        cacheLocations.put((int)ev.getData(), ev.getSource());
     }
 
     /**
@@ -1390,7 +1407,8 @@ public class Datacenter extends SimEntity {
 
         private double time;
         private double latency;
-        private int source;
+        private int originalSource;
+        private int neighbourSource;
         private int destination;
         private int dataObjectID;
         private int length;
@@ -1398,7 +1416,8 @@ public class Datacenter extends SimEntity {
         public Request(double creationTime, int source, int destination, int dataObjectID, int length) {
             time = CloudSim.clock();
             this.latency = time - creationTime;
-            this.source = source;
+            this.originalSource = source;
+            neighbourSource = NetworkTopology.getSourceNeighbour(source, destination);
             this.destination = destination;
             this.dataObjectID = dataObjectID;
             this.length = length;

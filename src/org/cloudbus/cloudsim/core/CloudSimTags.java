@@ -316,6 +316,8 @@ public class CloudSimTags {
     
     public static final int CREATE_CACHE = BASE + 53;
     
+    public static final int ADD_CACHE_LOCATION = BASE + 54;
+    
 
     public static String TagText(int tagValue) {
         switch (tagValue) {
@@ -442,6 +444,8 @@ public class CloudSimTags {
                 return "CHECK_DEMAND_FOR_CACHES";
             case 53:
                 return "CREATE_CACHE";
+            case 54:
+                return "ADD_CACHE_LOCATION";
             default:
                 return "Invalid tag value";
         }
