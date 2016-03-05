@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
@@ -70,13 +69,6 @@ public class Datacenter extends SimEntity {
      */
     private double schedulingInterval;
 
-    // ATAKAN: Period of cache operation checks
-    private static double cacheQuantum;
-
-    public static void setCacheQuantum(double cacheQuantum) {
-        Datacenter.cacheQuantum = cacheQuantum;
-    }
-
     //ATAKAN: <DataObjectID, DatacenterID> Stores known cache locations.
     private HashSetValuedHashMap<Integer, Integer> cacheLocations;
 
@@ -88,7 +80,6 @@ public class Datacenter extends SimEntity {
     public void removeCacheLocation(int dataObjectID, int datacenterID){
         cacheLocations.removeMapping(dataObjectID, datacenterID);
     }*/
-    
     private boolean mainStorage;
 
     public void addDataToMainStorage(int dataObjectID, int length) {
@@ -101,7 +92,7 @@ public class Datacenter extends SimEntity {
 
     //ATAKAN: <DatacenterID, Latency> latencies to the known non-neigbour datacenters.
     private HashMap<Integer, Double> knownDistances;
-    
+
     //ATAKAN: <DataObjectID, NeighbourDatacenterID> Log of requests received from neighbours.
     private HashSet<Request> requests;
 
@@ -190,7 +181,7 @@ public class Datacenter extends SimEntity {
                 srcId = ((Integer) ev.getData()).intValue();
                 sendNow(srcId, ev.getTag(), getCharacteristics());
                 // ATAKAN: Schedule the first cache check
-                send(getId(), cacheQuantum, CloudSimTags.CHECK_DEMAND_FOR_CACHES);
+                send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
 
                 break;
 
@@ -814,7 +805,6 @@ public class Datacenter extends SimEntity {
                 }
                 if (!requiredData.isEmpty()) {
                     processCloudletPause(cl.getCloudletId(), userId, vmId, false);
-
                 } else {
                     estimatedFinishTime += fileTransferTime;
                     send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);
@@ -858,19 +848,21 @@ public class Datacenter extends SimEntity {
         knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
 
         int[] data = (int[]) ev.getData();
-        
+
         boolean found = false; //Check if cache is actually here
-        if(!found){
-            for(Cache c : caches){
-                if(c.dataObjectID==data[4]){
+        double length = 0;
+        if (!found) {
+            for (Cache c : caches) {
+                if (c.dataObjectID == data[4]) {
                     found = true;
+                    length = c.length;
                     break;
                 }
             }
         }
-        if (found) { 
+        if (found) {
             //System.out.println(getId() + ": " + (int) data[4] + " is here.");
-            sendNow(data[0], CloudSimTags.REMOTE_DATA_RETURN, data);
+            send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
             requests.add(new Request(ev.creationTime(), NetworkTopology.getSourceNeighbour(data[0], getId()), getId(), data[4], 1));
         } else {
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
@@ -918,14 +910,33 @@ public class Datacenter extends SimEntity {
 
     // ATAKAN: check for cache operation conditions and initiate the selected operation.
     private void checkCacheConditions() {
+        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
         if (mainStorage) {
-            //Only create is possible
+            for (int n : neighbours) {
+                for (Cache c : caches) {
+                    double cost = getCharacteristics().getCostPerSecond();
+                    if (getDemand(c.dataObjectID, n, 0) > cost) {
+                        send(n, c.length / NetworkTopology.getBw(), CloudSimTags.CREATE_CACHE, c);
+                    }
+                }
+            }
         } else {
             //Duplicate, migrate and remove are possible
         }
-        // Schedule the next check
-        send(getId(), cacheQuantum, CloudSimTags.CHECK_DEMAND_FOR_CACHES);
+        // Clear log for the current interval and schedule the next check
+        requests.clear();
+        send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
         //Log.printLine(CloudSim.clock() + " CACHE CHECK!");
+    }
+
+    private double getDemand(int dataObjectId, int neighbourId, double latencyOffset) {
+        double demand = 0;
+        for (Request r : requests) {
+            if (r.dataObjectID == dataObjectId && r.source == neighbourId) {
+                demand += (r.latency + latencyOffset);
+            }
+        }
+        return demand * CloudSim.getAggression();
     }
 
     /**
@@ -1359,7 +1370,7 @@ public class Datacenter extends SimEntity {
     }
 
     private static class Cache {
-        
+
         private int dataObjectID;
         private int length;
         //History
@@ -1368,10 +1379,11 @@ public class Datacenter extends SimEntity {
             this.dataObjectID = dataObjectID;
             this.length = length;
         }
-        
+
     }
 
     private static class Request {
+
         private double time;
         private double latency;
         private int source;
@@ -1381,7 +1393,7 @@ public class Datacenter extends SimEntity {
 
         public Request(double creationTime, int source, int destination, int dataObjectID, int length) {
             time = CloudSim.clock();
-            this.latency = time-creationTime;
+            this.latency = time - creationTime;
             this.source = source;
             this.destination = destination;
             this.dataObjectID = dataObjectID;

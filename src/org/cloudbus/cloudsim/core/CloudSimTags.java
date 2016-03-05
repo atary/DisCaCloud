@@ -311,8 +311,11 @@ public class CloudSimTags {
     public static final int REMOTE_DATA_RETURN = BASE + 50;
 
     public static final int REMOTE_DATA_NOT_FOUND = BASE + 51;
+
+    public static final int CHECK_DEMAND_FOR_CACHES = BASE + 52;
     
-    public static final int  CHECK_DEMAND_FOR_CACHES = BASE + 52;
+    public static final int CREATE_CACHE = BASE + 53;
+    
 
     public static String TagText(int tagValue) {
         switch (tagValue) {
@@ -437,6 +440,8 @@ public class CloudSimTags {
                 return "REMOTE_DATA_NOT_FOUND";
             case 52:
                 return "CHECK_DEMAND_FOR_CACHES";
+            case 53:
+                return "CREATE_CACHE";
             default:
                 return "Invalid tag value";
         }

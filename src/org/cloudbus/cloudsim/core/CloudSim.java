@@ -35,6 +35,28 @@ import org.cloudbus.cloudsim.core.predicates.PredicateNone;
  * @since CloudSim Toolkit 1.0
  */
 public class CloudSim {
+    
+    //ATAKAN: User defined aggression parameter
+    private static double aggression;
+
+    public static void setAggression(double aggression) {
+        CloudSim.aggression = aggression;
+    }
+
+    public static double getAggression() {
+        return aggression;
+    }
+    
+    //ATAKAN: Period of cache operation checks
+    private static double cacheQuantum;
+
+    public static void setCacheQuantum(double cacheQuantum) {
+        CloudSim.cacheQuantum = cacheQuantum;
+    }
+
+    public static double getCacheQuantum() {
+        return cacheQuantum;
+    }
 
     /**
      * The Constant CLOUDSIM_VERSION_STRING.

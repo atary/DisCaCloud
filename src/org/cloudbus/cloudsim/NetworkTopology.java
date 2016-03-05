@@ -45,9 +45,15 @@ public class NetworkTopology {
 
     protected static double[][] bwMatrix = null;
 
+    protected static double bw = 0;
+
     protected static TopologicalGraph graph = null;
 
     protected static Map<Integer, Integer> map = null;
+
+    public static double getBw() {
+        return bw;
+    }
 
     public static void setNextIdx(int nextIdx) {
         NetworkTopology.nextIdx = nextIdx;
@@ -106,7 +112,7 @@ public class NetworkTopology {
      * @post $none
      */
     public static void addLink(int srcId, int destId, double bw, double lat) {
-
+        NetworkTopology.bw = bw;
         if (graph == null) {
             graph = new TopologicalGraph();
         }
@@ -240,21 +246,31 @@ public class NetworkTopology {
         }
         return 0.0;
     }
-    
+
     // ATAKAN: Returns the node preceeding the destination on the shortest path from source to destination.
     public static int getSourceNeighbour(int sourceId, int destinationId) {
-        return delayMatrix.getSourceNeighbour(sourceId, destinationId);
+        return inverseMap(delayMatrix.getSourceNeighbour(map.get(sourceId), map.get(destinationId)));
     }
-    
+
     // ATAKAN: Retuns IDs of all neighbours of the destination.
-    public static ArrayList<Integer> getNeighbours(int destinationId){
+    public static ArrayList<Integer> getNeighbours(int destinationId) {
         ArrayList<Integer> IDs = new ArrayList<>();
-        for(int i=0; i<bwMatrix.length; i++){
-            if(bwMatrix[i][destinationId]>0){
-                IDs.add(i);
+        for (int i = 0; i < bwMatrix.length; i++) {
+            if (bwMatrix[i][map.get(destinationId)] > 0) {
+                IDs.add(inverseMap(i));
             }
         }
         return IDs;
+    }
+
+    private static int inverseMap(int id) {
+        for (int i : map.keySet()) {
+            if (map.get(i) == id) {
+                return i;
+            }
+        }
+        System.err.println("Inverse Map Error!");
+        return -1;
     }
 
     /**
