@@ -80,8 +80,8 @@ public class CloudSimExample1 {
             Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
             Datacenter datacenter1 = createDatacenter("Datacenter_1");
-            datacenter1.addDataToMainStorage(5,1000);
-            datacenter1.addDataToMainStorage(6,1000);
+            datacenter1.addDataToMainDC(5,1000);
+            datacenter1.addDataToMainDC(6,1000);
 
             // Third step: Create Broker
             DatacenterBroker broker = createBroker();
@@ -124,8 +124,8 @@ public class CloudSimExample1 {
             cloudlet2.setUserId(brokerId);
             cloudlet.setVmId(vmid);
             cloudlet2.setVmId(vmid+1);
-            cloudlet.setMainStorageDcId(datacenter1.getId());
-            cloudlet2.setMainStorageDcId(datacenter1.getId());
+            cloudlet.setMainDC(datacenter1.getId());
+            cloudlet2.setMainDC(datacenter1.getId());
             cloudlet.addDataRequest(5);
             cloudlet.addDataRequest(6);
             cloudlet2.addDataRequest(5);

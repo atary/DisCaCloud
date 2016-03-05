@@ -74,7 +74,7 @@ public class Datacenter extends SimEntity {
 
     private boolean mainStorage;
 
-    public void addDataToMainStorage(int dataObjectID, int length) {
+    public void addDataToMainDC(int dataObjectID, int length) {
         mainStorage = true;
         caches.add(new Cache(dataObjectID, length));
     }
@@ -318,7 +318,15 @@ public class Datacenter extends SimEntity {
                 break;
 
             case CloudSimTags.ADD_CACHE_LOCATION:
-                processAddCacheLocation(ev);
+                knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
+                if (ev.getSource() != getId()) {
+                    cacheLocations.put((int) ev.getData(), ev.getSource());
+                }
+                break;
+
+            case CloudSimTags.REMOVE_CACHE_LOCATION:
+                knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
+                cacheLocations.removeMapping((int) ev.getData(), ev.getSource());
                 break;
 
             // other unknown tags are processed by this method
@@ -799,11 +807,25 @@ public class Datacenter extends SimEntity {
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
                 //ATAKAN: Pause cloudlet and request data 
                 ArrayList<Integer> requiredData = cl.getRequiredData();
+                boolean requested = false;
                 for (int dataObjectID : requiredData) {
-                    cacheLocations.put(dataObjectID, cl.getMainStorageDcId());
-                    sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), dataObjectID);
+                    boolean found = false;
+                    for (Cache c : caches) {
+                        if (c.dataObjectID == dataObjectID) {
+                            cl.addDataReceive(dataObjectID);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        requested = true;
+                        if (getId() != cl.getMainStorageDcId()) {
+                            cacheLocations.put(dataObjectID, cl.getMainStorageDcId());
+                        }
+                        sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), dataObjectID);
+                    }
                 }
-                if (!requiredData.isEmpty()) {
+                if (requested) {
                     processCloudletPause(cl.getCloudletId(), userId, vmId, false);
                 } else {
                     estimatedFinishTime += fileTransferTime;
@@ -945,6 +967,8 @@ public class Datacenter extends SimEntity {
         Cache c = (Cache) ev.getData();
         caches.add(c);
         ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
+
+        //Notify other DCs for the new cache
         for (int n : neighbours) {
             sendNow(n, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
         }
@@ -953,11 +977,6 @@ public class Datacenter extends SimEntity {
                 sendNow(r.originalSource, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
             }
         }
-    }
-
-    private void processAddCacheLocation(SimEvent ev) {
-        knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
-        cacheLocations.put((int)ev.getData(), ev.getSource());
     }
 
     /**

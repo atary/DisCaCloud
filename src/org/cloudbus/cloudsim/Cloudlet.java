@@ -257,7 +257,7 @@ public class Cloudlet {
     // ATAKAN: The id of the datacenter where the main storage exists.
     private int mainStorageDcId;
 
-    public void setMainStorageDcId(int mainStorageDcId) {
+    public void setMainDC(int mainStorageDcId) {
         this.mainStorageDcId = mainStorageDcId;
     }
 
