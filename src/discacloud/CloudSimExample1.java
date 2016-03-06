@@ -226,6 +226,8 @@ public class CloudSimExample1 {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        
+        CloudSim.DcCosts.put(datacenter.getId(), 10.0);
 
         return datacenter;
     }

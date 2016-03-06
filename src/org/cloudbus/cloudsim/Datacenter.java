@@ -77,6 +77,7 @@ public class Datacenter extends SimEntity {
     public void addDataToMainDC(int dataObjectID, int length) {
         mainStorage = true;
         caches.add(new Cache(dataObjectID, length));
+        Log.cacheStart(getId(), dataObjectID);
     }
 
     //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
@@ -306,10 +307,12 @@ public class Datacenter extends SimEntity {
                 break;
 
             case CloudSimTags.REMOTE_DATA_RETURN:
+                Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock()-ev.creationTime());
                 processDataReturn(ev);
                 break;
 
             case CloudSimTags.REMOTE_DATA_NOT_FOUND:
+                Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock()-ev.creationTime());
                 processDataNotFound(ev);
                 break;
 
@@ -876,7 +879,7 @@ public class Datacenter extends SimEntity {
         int[] data = (int[]) ev.getData();
 
         boolean found = false; //Check if cache is actually here
-        double length = 0;
+        int length = 0;
         if (!found) {
             for (Cache c : caches) {
                 if (c.dataObjectID == data[4]) {
@@ -889,7 +892,7 @@ public class Datacenter extends SimEntity {
         if (found) {
             //System.out.println(getId() + ": " + (int) data[4] + " is here.");
             send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
-            requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], 1));
+            requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], length));
         } else {
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
@@ -949,8 +952,8 @@ public class Datacenter extends SimEntity {
         } else {
             for (Cache c : caches) {
                 for (int n : neighbours) {
-                    double neighbourCost = CloudSim.DcCosts.getOrDefault(n, Double.MAX_VALUE);
-                    double localCost = CloudSim.DcCosts.getOrDefault(getId(), Double.MAX_VALUE);
+                    double neighbourCost = CloudSim.DcCosts.get(n);
+                    double localCost = CloudSim.DcCosts.get(getId());
                     double neighbourLatency = NetworkTopology.getDelay(getId(), n);
                     double neighbourDemand = getDemand(c.dataObjectID, n, 0);
                     double neighbourDecreasedDemand = getDemand(c.dataObjectID, n, -neighbourLatency);
@@ -965,7 +968,7 @@ public class Datacenter extends SimEntity {
                     double allNeighboursDemand = neighbourDemand + otherNeighboursDemand;
                     double transferDelay = c.length / NetworkTopology.getBw();
                     if (allNeighboursDemand - (otherNeighboursIncreasedDemand + neighbourDecreasedDemand) > neighbourCost - localCost) { //Migrate Decision
-                        schedule(getId(), NetworkTopology.getDelay(getId(), n) + transferDelay, CloudSimTags.REMOVE_CACHE, c); //Cache will stay here until it is created.
+                        schedule(getId(), NetworkTopology.getDelay(getId(), n) + transferDelay, CloudSimTags.REMOVE_CACHE, c); //Cache will stay here until create message is delivered.
                         send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
                     } else if (neighbourDemand > neighbourCost && otherNeighboursDemand > localCost) { //Duplicate Decision
                         send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
@@ -998,32 +1001,30 @@ public class Datacenter extends SimEntity {
 
         //TODO: what if capacity is not enough
         caches.add(c);
+        Log.cacheStart(getId(), c.dataObjectID);
 
         //Notify other DCs for the new cache
-        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
-        for (int n : neighbours) {
-            sendNow(n, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
-        }
-        for (Request r : requests) {
-            if (r.dataObjectID == c.dataObjectID && !neighbours.contains(r.originalSource)) {
-                sendNow(r.originalSource, CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
-            }
-        }
+        notifyOtherDCs(CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
     }
 
     //ATAKAN: Remove a cache from this location
     private void processCacheRemoval(SimEvent ev) {
         Cache c = (Cache) ev.getData();
         caches.remove(c);
+        Log.cacheEnd(getId(), c.dataObjectID, c.length);
 
         //Notify other DCs for the removal
+        notifyOtherDCs(CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
+    }
+
+    private void notifyOtherDCs(int message, int dataObjectID) {
         ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
         for (int n : neighbours) {
-            sendNow(n, CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
+            sendNow(n, message, dataObjectID);
         }
         for (Request r : requests) {
-            if (r.dataObjectID == c.dataObjectID && !neighbours.contains(r.originalSource)) {
-                sendNow(r.originalSource, CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
+            if (r.dataObjectID == dataObjectID && !neighbours.contains(r.originalSource)) {
+                sendNow(r.originalSource, message, dataObjectID);
             }
         }
     }
@@ -1297,6 +1298,9 @@ public class Datacenter extends SimEntity {
      */
     @Override
     public void shutdownEntity() {
+        for (Cache c : caches) {
+            Log.cacheEnd(getId(), c.dataObjectID, c.length);
+        }
         Log.printLine(getName() + " is shutting down...");
     }
 
@@ -1458,15 +1462,23 @@ public class Datacenter extends SimEntity {
         this.schedulingInterval = schedulingInterval;
     }
 
-    private static class Cache {
+    protected static class Cache {
 
-        private int dataObjectID;
-        private int length;
+        private final int dataObjectID;
+        private final int length;
         //History
 
         public Cache(int dataObjectID, int length) {
             this.dataObjectID = dataObjectID;
             this.length = length;
+        }
+
+        public int getDataObjectID() {
+            return dataObjectID;
+        }
+
+        public int getLength() {
+            return length;
         }
 
         @Override
@@ -1496,13 +1508,13 @@ public class Datacenter extends SimEntity {
 
     private static class Request {
 
-        private double time;
-        private double latency;
-        private int originalSource;
-        private int neighbourSource;
-        private int destination;
-        private int dataObjectID;
-        private int length;
+        private final double time;
+        private final double latency;
+        private final int originalSource;
+        private final int neighbourSource;
+        private final int destination;
+        private final int dataObjectID;
+        private final int length;
 
         public Request(double creationTime, int source, int destination, int dataObjectID, int length) {
             time = CloudSim.clock();

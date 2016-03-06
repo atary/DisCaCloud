@@ -5,165 +5,226 @@
  *
  * Copyright (c) 2009-2012, The University of Melbourne, Australia
  */
-
 package org.cloudbus.cloudsim;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.PrintFile;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
 /**
- * The Log class used for performing loggin of the simulation process. It provides the ability to
- * substitute the output stream by any OutputStream subclass.
- * 
+ * The Log class used for performing loggin of the simulation process. It
+ * provides the ability to substitute the output stream by any OutputStream
+ * subclass.
+ *
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 2.0
  */
 public class Log {
 
-	/** The Constant LINE_SEPARATOR. */
-	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    /**
+     * The Constant LINE_SEPARATOR.
+     */
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-	/** The output. */
-	private static OutputStream output;
+    /**
+     * The output.
+     */
+    private static OutputStream output;
 
-	/** The disable output flag. */
-	private static boolean disabled;
+    /**
+     * The disable output flag.
+     */
+    private static boolean disabled;
 
-	/**
-	 * Prints the message.
-	 * 
-	 * @param message the message
-	 */
-	public static void print(String message) {
-		if (!isDisabled()) {
-			try {
-				getOutput().write(message.getBytes());
-                                PrintFile.AddtoFile(message);
-                                
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    //ATAKAN: <Cache ID (DC + DataObject), time>
+    private static final HashMap<String, Double> caches = new HashMap<>();
+    private static double totalCost = 0.0;
 
-	/**
-	 * Prints the message passed as a non-String object.
-	 * 
-	 * @param message the message
-	 */
-	public static void print(Object message) {
-		if (!isDisabled()) {
-			print(String.valueOf(message));
-		}
-	}
+    //ATAKAN: <Message Tag, latencies>
+    private static final HashSetValuedHashMap<Integer, Double> latencies = new HashSetValuedHashMap<>();
 
-	/**
-	 * Prints the line.
-	 * 
-	 * @param message the message
-	 */
-	public static void printLine(String message) {
-		if (!isDisabled()) {
-			print(message + LINE_SEPARATOR);
-		}
-	}
+    /**
+     * Prints the message.
+     *
+     * @param message the message
+     */
+    public static void print(String message) {
+        if (!isDisabled()) {
+            try {
+                getOutput().write(message.getBytes());
+                PrintFile.AddtoFile(message);
 
-	/**
-	 * Prints the empty line.
-	 */
-	public static void printLine() {
-		if (!isDisabled()) {
-			print(LINE_SEPARATOR);
-		}
-	}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-	/**
-	 * Prints the line passed as a non-String object.
-	 * 
-	 * @param message the message
-	 */
-	public static void printLine(Object message) {
-		if (!isDisabled()) {
-			printLine(String.valueOf(message));
-		}
-	}
+    /**
+     * Prints the message passed as a non-String object.
+     *
+     * @param message the message
+     */
+    public static void print(Object message) {
+        if (!isDisabled()) {
+            print(String.valueOf(message));
+        }
+    }
 
-	/**
-	 * Prints a string formated as in String.format().
-	 * 
-	 * @param format the format
-	 * @param args the args
-	 */
-	public static void format(String format, Object... args) {
-		if (!isDisabled()) {
-			print(String.format(format, args));
-		}
-	}
+    /**
+     * Prints the line.
+     *
+     * @param message the message
+     */
+    public static void printLine(String message) {
+        if (!isDisabled()) {
+            print(message + LINE_SEPARATOR);
+        }
+    }
 
-	/**
-	 * Prints a line formated as in String.format().
-	 * 
-	 * @param format the format
-	 * @param args the args
-	 */
-	public static void formatLine(String format, Object... args) {
-		if (!isDisabled()) {
-			printLine(String.format(format, args));
-		}
-	}
+    /**
+     * Prints the empty line.
+     */
+    public static void printLine() {
+        if (!isDisabled()) {
+            print(LINE_SEPARATOR);
+        }
+    }
 
-	/**
-	 * Sets the output.
-	 * 
-	 * @param _output the new output
-	 */
-	public static void setOutput(OutputStream _output) {
-		output = _output;
-	}
+    /**
+     * Prints the line passed as a non-String object.
+     *
+     * @param message the message
+     */
+    public static void printLine(Object message) {
+        if (!isDisabled()) {
+            printLine(String.valueOf(message));
+        }
+    }
 
-	/**
-	 * Gets the output.
-	 * 
-	 * @return the output
-	 */
-	public static OutputStream getOutput() {
-		if (output == null) {
-			setOutput(System.out);
-		}
-		return output;
-	}
+    /**
+     * Prints a string formated as in String.format().
+     *
+     * @param format the format
+     * @param args the args
+     */
+    public static void format(String format, Object... args) {
+        if (!isDisabled()) {
+            print(String.format(format, args));
+        }
+    }
 
-	/**
-	 * Sets the disable output flag.
-	 * 
-	 * @param _disabled the new disabled
-	 */
-	public static void setDisabled(boolean _disabled) {
-		disabled = _disabled;
-	}
+    /**
+     * Prints a line formated as in String.format().
+     *
+     * @param format the format
+     * @param args the args
+     */
+    public static void formatLine(String format, Object... args) {
+        if (!isDisabled()) {
+            printLine(String.format(format, args));
+        }
+    }
 
-	/**
-	 * Checks if the output is disabled.
-	 * 
-	 * @return true, if is disable
-	 */
-	public static boolean isDisabled() {
-		return disabled;
-	}
+    /**
+     * Sets the output.
+     *
+     * @param _output the new output
+     */
+    public static void setOutput(OutputStream _output) {
+        output = _output;
+    }
 
-	/**
-	 * Disables the output.
-	 */
-	public static void disable() {
-		setDisabled(true);
-	}
+    /**
+     * Gets the output.
+     *
+     * @return the output
+     */
+    public static OutputStream getOutput() {
+        if (output == null) {
+            setOutput(System.out);
+        }
+        return output;
+    }
 
-	/**
-	 * Enables the output.
-	 */
-	public static void enable() {
-		setDisabled(false);
-	}
+    /**
+     * Sets the disable output flag.
+     *
+     * @param _disabled the new disabled
+     */
+    public static void setDisabled(boolean _disabled) {
+        disabled = _disabled;
+    }
 
+    /**
+     * Checks if the output is disabled.
+     *
+     * @return true, if is disable
+     */
+    public static boolean isDisabled() {
+        return disabled;
+    }
+
+    /**
+     * Disables the output.
+     */
+    public static void disable() {
+        setDisabled(true);
+    }
+
+    /**
+     * Enables the output.
+     */
+    public static void enable() {
+        setDisabled(false);
+    }
+
+    //ATAKAN: Log cost
+    public static void cacheStart(int DcId, int dataObjectID) {
+        String cacheId = DcId + "-" + dataObjectID;
+        caches.put(cacheId, CloudSim.clock());
+    }
+
+    public static void cacheEnd(int DcId, int dataObjectID, int length) {
+        double unitCost = CloudSim.DcCosts.get(DcId);
+        String cacheId = DcId + "-" + dataObjectID;
+        if (caches.containsKey(cacheId)) {
+            double start = caches.remove(cacheId);
+            double duration = CloudSim.clock() - start;
+            totalCost += unitCost * length * duration;
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public static double getTotalCost() {
+        return totalCost;
+    }
+
+    //ATAKAN: Log latency
+    public static void addLatency(int message, double latency) {
+        latencies.put(message, latency);
+        System.out.println("---------- " + latency);
+    }
+
+    public static double getTotalLatency() {
+        double totalLatency = 0;
+        for (int m : latencies.keySet()) {
+            for (double l : latencies.get(m)) {
+                totalLatency += l;
+            }
+        }
+        return totalLatency;
+    }
+
+    public static double getMessageLatency(int message) {
+        double messageLatency = 0;
+        for (double l : latencies.get(message)) {
+            messageLatency += l;
+        }
+        return messageLatency;
+    }
 }

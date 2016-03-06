@@ -58,7 +58,7 @@ public class CloudSim {
         return cacheQuantum;
     }
     
-    //ATAKAN: Could be converted to messaging but it would make no difference.
+    //ATAKAN: Could be converted to messaging but it would make no difference in terms of performance as long as costs are static.
     public static HashMap<Integer, Double> DcCosts = new HashMap<>();
 
     /**
