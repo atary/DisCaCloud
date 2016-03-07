@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(100);
+            CloudSim.setCacheQuantum(50);
             CloudSim.setAggression(0.005);
             int dataObjectCount = 2;
             int dataObjectLength = 100;
@@ -90,6 +91,12 @@ public class DisCaCloud {
             createLoad(mainDcId, dcList.get(6), brList.get(6), 190, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 220, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 290, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 100, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 120, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 180, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 190, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 220, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
@@ -97,7 +104,13 @@ public class DisCaCloud {
             CloudSim.stopSimulation();
 
             //Final step: Print results when simulation is over
-            List<Cloudlet> newList = brList.get(6).getCloudletReceivedList();
+            List<Cloudlet> newList = new ArrayList<>();
+            for(DatacenterBroker br : brList){
+                newList.addAll(br.getCloudletReceivedList());
+            }
+            
+            Collections.sort(newList);
+                    
             printCloudletList(newList);
 
             Log.printLine("Total Cost: " + (int) Log.getTotalCost());
@@ -212,27 +225,27 @@ public class DisCaCloud {
         int size = list.size();
         Cloudlet cloudlet;
 
-        String indent = "    ";
+        String indent = "\t";
         Log.printLine();
         Log.printLine("========== OUTPUT ==========");
-        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
-                + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
-                + "Start Time" + indent + "Finish Time");
+        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + indent 
+                + "DC ID" + indent + "VM ID" + indent + "Time" + indent
+                + "Start" + indent + "Finish");
 
         
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
-            Log.print(indent + cloudlet.getCloudletId() + indent + indent);
+            Log.print(cloudlet.getCloudletId() + indent + indent);
 
             if (cloudlet.getCloudletStatus() == Cloudlet.SUCCESS) {
                 Log.print("SUCCESS");
 
                 Log.printLine(indent + indent + cloudlet.getResourceId()
-                        + indent + indent + indent + cloudlet.getVmId()
-                        + indent + indent
+                        + indent + cloudlet.getVmId()
+                        + indent
                         + dft.format(cloudlet.getActualCPUTime()) + indent
-                        + indent + dft.format(cloudlet.getExecStartTime())
-                        + indent + indent
+                        + dft.format(cloudlet.getExecStartTime())
+                        + indent 
                         + dft.format(cloudlet.getFinishTime()));
             }
         }
