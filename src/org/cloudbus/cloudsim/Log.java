@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.PrintFile;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 
 /**
  * The Log class used for performing loggin of the simulation process. It
@@ -45,7 +44,7 @@ public class Log {
     private static double totalCost = 0.0;
 
     //ATAKAN: <Message Tag, latencies>
-    private static final HashSetValuedHashMap<Integer, Double> latencies = new HashSetValuedHashMap<>();
+    private static final HashMap<Integer, Double> latencies = new HashMap<>();
 
     /**
      * Prints the message.
@@ -222,24 +221,22 @@ public class Log {
 
     //ATAKAN: Log latency
     public static void addLatency(int message, double latency) {
-        latencies.put(message, latency);
+        double val = latency;
+        if (latencies.containsKey(message)) {
+            val += latencies.get(message);
+        }
+        latencies.put(message, val);
     }
 
     public static double getTotalLatency() {
         double totalLatency = 0;
         for (int m : latencies.keySet()) {
-            for (double l : latencies.get(m)) {
-                totalLatency += l;
-            }
+            totalLatency += latencies.get(m);
         }
         return totalLatency;
     }
 
     public static double getMessageLatency(int message) {
-        double messageLatency = 0;
-        for (double l : latencies.get(message)) {
-            messageLatency += l;
-        }
-        return messageLatency;
+        return latencies.getOrDefault(message, 0.0);
     }
 }

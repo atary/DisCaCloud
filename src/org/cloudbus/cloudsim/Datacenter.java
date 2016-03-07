@@ -940,7 +940,7 @@ public class Datacenter extends SimEntity {
                 return minId;
             }
         }
-        return locs.iterator().next();
+        return locs.iterator().next(); //TODO: Possible bug, recreate by setting num data objects to 1
     }
 
     // ATAKAN: check for cache operation conditions and initiate the selected operation.
@@ -950,7 +950,7 @@ public class Datacenter extends SimEntity {
             if (mainStorage) {
                 for (Cache c : caches) {
                     for (int n : neighbours) {
-                        double neighbourCost = CloudSim.DcCosts.getOrDefault(n, Double.MAX_VALUE);
+                        double neighbourCost = CloudSim.DcCosts.get(n);
                         if (getDemand(c.dataObjectID, n, 0) > neighbourCost) { //Create Decision
                             send(n, c.length / NetworkTopology.getBw(), CloudSimTags.CREATE_CACHE, c);
                             Log.printLine(CloudSim.clock() + ": " + getName() + ": Create a new cache for data object #" + c.getDataObjectID() + " in " + labelMap.get(n));

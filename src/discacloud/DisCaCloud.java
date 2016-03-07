@@ -24,6 +24,7 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -32,6 +33,7 @@ public class DisCaCloud {
 
     private static int vmid = 0;
     private static int clid = 0;
+    private static DecimalFormat dft = new DecimalFormat("00.0");
 
     public static void main(String[] args) {
         //Log.disable();
@@ -47,8 +49,8 @@ public class DisCaCloud {
 
             //CONFIGURATION
             CloudSim.setCacheQuantum(100);
-            CloudSim.setAggression(10);
-            int dataObjectCount = 50;
+            CloudSim.setAggression(0.005);
+            int dataObjectCount = 2;
             int dataObjectLength = 100;
             int mainDcIndex = 0;
 
@@ -98,7 +100,10 @@ public class DisCaCloud {
             List<Cloudlet> newList = brList.get(6).getCloudletReceivedList();
             printCloudletList(newList);
 
-            Log.printLine("CloudSimExample1 finished!");
+            Log.printLine("Total Cost: " + (int) Log.getTotalCost());
+            Log.printLine("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
+            Log.printLine("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");
@@ -174,7 +179,7 @@ public class DisCaCloud {
             e.printStackTrace();
         }
 
-        CloudSim.DcCosts.put(datacenter.getId(), 10.0);
+        CloudSim.DcCosts.put(datacenter.getId(), 0.01);
 
         return datacenter;
     }
@@ -214,7 +219,7 @@ public class DisCaCloud {
                 + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
                 + "Start Time" + indent + "Finish Time");
 
-        DecimalFormat dft = new DecimalFormat("###.##");
+        
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
             Log.print(indent + cloudlet.getCloudletId() + indent + indent);
