@@ -319,12 +319,10 @@ public class Datacenter extends SimEntity {
                 break;
 
             case CloudSimTags.REMOTE_DATA_RETURN:
-                Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock() - ev.creationTime());
                 processDataReturn(ev);
                 break;
 
             case CloudSimTags.REMOTE_DATA_NOT_FOUND:
-                Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock() - ev.creationTime());
                 processDataNotFound(ev);
                 break;
 
@@ -903,10 +901,11 @@ public class Datacenter extends SimEntity {
             }
         }
         if (found) {
-            //System.out.println(getId() + ": " + (int) data[4] + " is here.");
+            Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock() - ev.creationTime());
             send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
             requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], length));
         } else {
+            Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock() - ev.creationTime());
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
     }
