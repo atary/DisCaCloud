@@ -55,10 +55,6 @@ public class NetworkTopology {
     public static double getBw() {
         return bw;
     }
-    
-    public static void setNextIdx(int nextIdx) {
-        NetworkTopology.nextIdx = nextIdx;
-    }
 
     /**
      * Creates the network topology if file exists and if file can be
@@ -79,6 +75,7 @@ public class NetworkTopology {
             graph = reader.readGraphFile(fileName);
             map = new HashMap<Integer, Integer>();
             generateMatrices();
+            nextIdx = bwMatrix.length; //ATAKAN: in order to allow future link/node additions.
         } catch (IOException e) {
             // problem with the file. Does not simulate network
             Log.printLine("Problem in processing BRITE file. Network simulation is disabled. Error: "

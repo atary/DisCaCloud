@@ -1,16 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package discacloud;
 
-/**
- *
- * @author ataka
- */
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,112 +27,57 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 
-/**
- * A simple example showing how to create a datacenter with one host and run one
- * cloudlet on it.
- */
 public class CloudSimExample1 {
 
-    /**
-     * The cloudlet list.
-     */
-    private static List<Cloudlet> cloudletList;
+    private static int vmid = 0;
+    private static int clid = 0;
 
-    /**
-     * The vmlist.
-     */
-    private static List<Vm> vmlist;
-
-    /**
-     * Creates main() to run this example.
-     *
-     * @param args the args
-     */
-    @SuppressWarnings("unused")
     public static void main(String[] args) {
-
-        Log.printLine("Starting CloudSimExample1...");
+        Log.disableFile();
+        Log.printLine("Starting DisCaCloud...");
 
         try {
-            // First step: Initialize the CloudSim package. It should be called
-            // before creating any entities.
-            int num_user = 1; // number of cloud users
+            int num_user = 15;
             Calendar calendar = Calendar.getInstance();
-            boolean trace_flag = false; // mean trace events
+            boolean trace_flag = false;
 
-            // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
 
-            // Second step: Create Datacenters
-            // Datacenters are the resource providers in CloudSim. We need at
-            // list one of them to run a CloudSim simulation
+            //CONFIGURATION
             CloudSim.setCacheQuantum(50);
             CloudSim.setAggression(10);
-            
-            Datacenter datacenter0 = createDatacenter("Datacenter_0");
+            int dataObjectCount = 50;
+            int dataObjectLength = 10000;
+            int mainDcIndex = 0;
 
-            Datacenter datacenter1 = createDatacenter("Datacenter_1");
-            datacenter1.addDataToMainDC(5,1000);
-            datacenter1.addDataToMainDC(6,1000);
+            ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
+            NetworkTopology.buildNetworkTopology("C:\\federica.brite");
 
-            // Third step: Create Broker
-            DatacenterBroker broker = createBroker();
-            int brokerId = broker.getId();
+            ArrayList<Datacenter> dcList = new ArrayList<>();
+            ArrayList<DatacenterBroker> brList = new ArrayList<>();
 
-            // Fourth step: Create one virtual machine
-            vmlist = new ArrayList<Vm>();
+            for (int i = 0; i < 15; i++) {
+                Datacenter dc = createDatacenter(labels.get(i));
+                dcList.add(dc);
+                NetworkTopology.mapNode(dc.getId(), i);
+            }
 
-            // VM description
-            int vmid = 0;
-            int mips = 1000;
-            long size = 10000; // image size (MB)
-            int ram = 512; // vm memory (MB)
-            long bw = 1000;
-            int pesNumber = 1; // number of cpus
-            String vmm = "Xen"; // VMM name
+            for (int i = 0; i < dataObjectCount; i++) {
+                dcList.get(mainDcIndex).addDataToMainDC(i, dataObjectLength); //GARR is the main DC
+            }
 
-            // create VM
-            //Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
-            // add the VM to the vmList
-            vmlist.add(new Vm(vmid, brokerId, 0, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
-            vmlist.add(new Vm(vmid+1, brokerId, 0, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared()));
-                    
-            // submit vm list to the broker
-            broker.submitVmList(vmlist);
+            for (Datacenter dc : dcList) {
+                String name = dc.getName() + "_BROKER";
+                labels.add(name);
+                DatacenterBroker br = createBroker(name);
+                br.setBindedDC(dc.getId());
+                brList.add(br);
+                NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
+            }
 
-            // Fifth step: Create one Cloudlet
-            cloudletList = new ArrayList<Cloudlet>();
+            int mainDcId = dcList.get(mainDcIndex).getId();
 
-            // Cloudlet properties
-            int id = 0;
-            long length = 400000;
-            long fileSize = 300;
-            long outputSize = 300;
-            UtilizationModel utilizationModel = new UtilizationModelFull();
-
-            Cloudlet cloudlet = new Cloudlet(id, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-            cloudlet.setUserId(brokerId);
-            Cloudlet cloudlet2 = new Cloudlet(id+1, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-            cloudlet2.setUserId(brokerId);
-            cloudlet.setVmId(vmid);
-            cloudlet2.setVmId(vmid+1);
-            cloudlet.setMainDC(datacenter1.getId());
-            cloudlet2.setMainDC(datacenter1.getId());
-            cloudlet.addDataRequest(5);
-            cloudlet.addDataRequest(6);
-            cloudlet2.addDataRequest(5);
-            cloudlet2.addDataRequest(6);
-            
-            // add the cloudlet to the list
-            cloudletList.add(cloudlet);
-            cloudletList.add(cloudlet2);
-
-            // submit cloudlet list to the broker
-            broker.submitCloudletList(cloudletList);
-            
-            NetworkTopology.addLink(datacenter0.getId(), broker.getId(), 10.0, 0.0001);
-            NetworkTopology.addLink(datacenter1.getId(), broker.getId(), 10.0, 0);
-            NetworkTopology.addLink(datacenter0.getId(), datacenter1.getId(), 10.0, 100);
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1, 3, 5));
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
@@ -148,7 +85,7 @@ public class CloudSimExample1 {
             CloudSim.stopSimulation();
 
             //Final step: Print results when simulation is over
-            List<Cloudlet> newList = broker.getCloudletReceivedList();
+            List<Cloudlet> newList = brList.get(6).getCloudletReceivedList();
             printCloudletList(newList);
 
             Log.printLine("CloudSimExample1 finished!");
@@ -226,7 +163,7 @@ public class CloudSimExample1 {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         CloudSim.DcCosts.put(datacenter.getId(), 10.0);
 
         return datacenter;
@@ -240,10 +177,10 @@ public class CloudSimExample1 {
      *
      * @return the datacenter broker
      */
-    private static DatacenterBroker createBroker() {
+    private static DatacenterBroker createBroker(String name) {
         DatacenterBroker broker = null;
         try {
-            broker = new DatacenterBroker("Broker");
+            broker = new DatacenterBroker(name);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -284,6 +221,32 @@ public class CloudSimExample1 {
                         + dft.format(cloudlet.getFinishTime()));
             }
         }
+    }
+
+    private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests) {
+        int mips = 1000;
+        long size = 10000; // image size (MB)
+        int ram = 512; // vm memory (MB)
+        long bw = 1000;
+        int pesNumber = 1; // number of cpus
+        String vmm = "Xen"; // VMM name
+
+        Vm newVm = new Vm(vmid++, br.getId(), start, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
+        br.addVm(newVm);
+
+        long length = 400000;
+        long fileSize = 300;
+        long outputSize = 300;
+        UtilizationModel utilizationModel = new UtilizationModelFull();
+
+        Cloudlet cloudlet = new Cloudlet(clid++, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
+        cloudlet.setUserId(br.getId());
+        cloudlet.setVmId(newVm.getId());
+        cloudlet.setMainDC(mainDcId);
+        for (int dr : dataRequests) {
+            cloudlet.addDataRequest(dr);
+        }
+        br.addCloudlet(cloudlet);
     }
 
 }

@@ -38,6 +38,7 @@ public class Log {
      * The disable output flag.
      */
     private static boolean disabled;
+    private static boolean fileDisabled;
 
     //ATAKAN: <Cache ID (DC + DataObject), time>
     private static final HashMap<String, Double> caches = new HashMap<>();
@@ -55,7 +56,9 @@ public class Log {
         if (!isDisabled()) {
             try {
                 getOutput().write(message.getBytes());
-                PrintFile.AddtoFile(message);
+                if (!isFileDisabled()) {
+                    PrintFile.AddtoFile(message);
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -159,6 +162,10 @@ public class Log {
         disabled = _disabled;
     }
 
+    public static void setFileDisabled(boolean _disabled) {
+        fileDisabled = _disabled;
+    }
+
     /**
      * Checks if the output is disabled.
      *
@@ -168,11 +175,20 @@ public class Log {
         return disabled;
     }
 
+    public static boolean isFileDisabled() {
+        return fileDisabled;
+    }
+
     /**
      * Disables the output.
      */
     public static void disable() {
         setDisabled(true);
+        setFileDisabled(true);
+    }
+
+    public static void disableFile() {
+        setFileDisabled(true);
     }
 
     /**
@@ -207,7 +223,6 @@ public class Log {
     //ATAKAN: Log latency
     public static void addLatency(int message, double latency) {
         latencies.put(message, latency);
-        System.out.println("---------- " + latency);
     }
 
     public static double getTotalLatency() {

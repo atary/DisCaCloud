@@ -261,7 +261,7 @@ public class Cloudlet {
         this.mainStorageDcId = mainStorageDcId;
     }
 
-    public int getMainStorageDcId() {
+    public int getMainDc() {
         return mainStorageDcId;
     }
 

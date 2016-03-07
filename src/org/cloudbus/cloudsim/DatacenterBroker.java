@@ -95,6 +95,13 @@ public class DatacenterBroker extends SimEntity {
      * The datacenter characteristics list.
      */
     protected Map<Integer, DatacenterCharacteristics> datacenterCharacteristicsList;
+    
+    //ATAKAN: Id of the DC that this broker submits its requests.
+    private int bindedDC;
+
+    public void setBindedDC(int bindedDC) {
+        this.bindedDC = bindedDC;
+    }
 
     /**
      * Created a new DatacenterBroker object.
@@ -136,6 +143,10 @@ public class DatacenterBroker extends SimEntity {
     public void submitVmList(List<? extends Vm> list) {
         getVmList().addAll(list);
     }
+    
+    public void addVm(Vm v){
+        getVmList().add(v);
+    }
 
     /**
      * This method is used to send to the broker the list of cloudlets.
@@ -146,6 +157,10 @@ public class DatacenterBroker extends SimEntity {
      */
     public void submitCloudletList(List<? extends Cloudlet> list) {
         getCloudletList().addAll(list);
+    }
+    
+    public void addCloudlet(Cloudlet c){
+        getCloudletList().add(c);
     }
 
     /**
@@ -212,7 +227,7 @@ public class DatacenterBroker extends SimEntity {
 
         if (getDatacenterCharacteristicsList().size() == getDatacenterIdsList().size()) {
             setDatacenterRequestedIdsList(new ArrayList<Integer>());
-            createVmsInDatacenter(getDatacenterIdsList().get(0));
+            createVmsInDatacenter(bindedDC);
         }
     }
 

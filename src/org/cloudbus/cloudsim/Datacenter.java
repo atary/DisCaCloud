@@ -307,12 +307,12 @@ public class Datacenter extends SimEntity {
                 break;
 
             case CloudSimTags.REMOTE_DATA_RETURN:
-                Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock()-ev.creationTime());
+                Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock() - ev.creationTime());
                 processDataReturn(ev);
                 break;
 
             case CloudSimTags.REMOTE_DATA_NOT_FOUND:
-                Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock()-ev.creationTime());
+                Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock() - ev.creationTime());
                 processDataNotFound(ev);
                 break;
 
@@ -826,8 +826,8 @@ public class Datacenter extends SimEntity {
                     }
                     if (!found) {
                         requested = true;
-                        if (getId() != cl.getMainStorageDcId()) {
-                            cacheLocations.put(dataObjectID, cl.getMainStorageDcId());
+                        if (getId() != cl.getMainDc()) {
+                            cacheLocations.put(dataObjectID, cl.getMainDc());
                         }
                         sendDataRequest(cl.getCloudletId(), cl.getUserId(), cl.getVmId(), dataObjectID);
                     }
@@ -1010,8 +1010,9 @@ public class Datacenter extends SimEntity {
     //ATAKAN: Remove a cache from this location
     private void processCacheRemoval(SimEvent ev) {
         Cache c = (Cache) ev.getData();
-        caches.remove(c);
-        Log.cacheEnd(getId(), c.dataObjectID, c.length);
+        if (caches.remove(c)) {
+            Log.cacheEnd(getId(), c.dataObjectID, c.length);
+        }
 
         //Notify other DCs for the removal
         notifyOtherDCs(CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);

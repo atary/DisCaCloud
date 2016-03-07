@@ -9,6 +9,7 @@
 package org.cloudbus.cloudsim.core;
 
 import java.util.ArrayList;
+import org.cloudbus.cloudsim.Log;
 
 /**
  * This class represents a simulation event which is passed between the entities in the simulation.
@@ -121,7 +122,7 @@ public class SimEvent implements Cloneable, Comparable<SimEvent> {
             }
             msg += System.lineSeparator();
 
-            PrintFile.AddtoFile(msg);
+            if(!Log.isFileDisabled()) PrintFile.AddtoFile(msg);
         }
 
         @Override
