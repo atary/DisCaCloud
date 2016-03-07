@@ -27,7 +27,7 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 
-public class CloudSimExample1 {
+public class DisCaCloud {
 
     private static int vmid = 0;
     private static int clid = 0;
