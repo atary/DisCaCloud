@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class DisCaCloud {
     private static int clid = 0;
 
     public static void main(String[] args) {
+        //Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
 
@@ -44,13 +46,14 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(50);
+            CloudSim.setCacheQuantum(100);
             CloudSim.setAggression(10);
             int dataObjectCount = 50;
-            int dataObjectLength = 10000;
+            int dataObjectLength = 100;
             int mainDcIndex = 0;
 
             ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
+            HashMap<Integer, String> labelMap = new HashMap<>();
             NetworkTopology.buildNetworkTopology("C:\\federica.brite");
 
             ArrayList<Datacenter> dcList = new ArrayList<>();
@@ -67,6 +70,7 @@ public class DisCaCloud {
             }
 
             for (Datacenter dc : dcList) {
+                labelMap.put(dc.getId(), dc.getName());
                 String name = dc.getName() + "_BROKER";
                 labels.add(name);
                 DatacenterBroker br = createBroker(name);
@@ -74,10 +78,16 @@ public class DisCaCloud {
                 brList.add(br);
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
+            Datacenter.setLabelMap(labelMap);
 
             int mainDcId = dcList.get(mainDcIndex).getId();
 
-            createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1, 3, 5));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 120, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 180, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 190, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 220, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(6), brList.get(6), 290, Arrays.asList(1));
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
@@ -224,7 +234,7 @@ public class DisCaCloud {
     }
 
     private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests) {
-        int mips = 1000;
+        int mips = 500;
         long size = 10000; // image size (MB)
         int ram = 512; // vm memory (MB)
         long bw = 1000;
@@ -234,7 +244,7 @@ public class DisCaCloud {
         Vm newVm = new Vm(vmid++, br.getId(), start, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
         br.addVm(newVm);
 
-        long length = 400000;
+        long length = 4000;
         long fileSize = 300;
         long outputSize = 300;
         UtilizationModel utilizationModel = new UtilizationModelFull();

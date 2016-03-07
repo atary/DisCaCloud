@@ -242,8 +242,8 @@ public class DatacenterBroker extends SimEntity {
         setDatacenterIdsList(CloudSim.getCloudResourceList());
         setDatacenterCharacteristicsList(new HashMap<Integer, DatacenterCharacteristics>());
 
-        Log.printLine(CloudSim.clock() + ": " + getName() + ": Cloud Resource List received with "
-                + getDatacenterIdsList().size() + " resource(s)");
+       /* Log.printLine(CloudSim.clock() + ": " + getName() + ": Cloud Resource List received with "
+                + getDatacenterIdsList().size() + " resource(s)");*/
 
         for (Integer datacenterId : getDatacenterIdsList()) {
             sendNow(datacenterId, CloudSimTags.RESOURCE_CHARACTERISTICS, getId());
@@ -385,8 +385,8 @@ public class DatacenterBroker extends SimEntity {
         String datacenterName = CloudSim.getEntityName(datacenterId);
         for (Vm vm : getVmList()) {
             if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
-                Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
-                        + " in " + datacenterName);
+                /*Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
+                        + " in " + datacenterName);*/
                 double requestTime = vm.getRequestTime();
                 double clock = CloudSim.clock();
                 if (clock >= requestTime) {
@@ -462,7 +462,7 @@ public class DatacenterBroker extends SimEntity {
      */
     @Override
     public void shutdownEntity() {
-        Log.printLine(getName() + " is shutting down...");
+        //Log.printLine(getName() + " is shutting down...");
     }
 
     /*
@@ -471,7 +471,7 @@ public class DatacenterBroker extends SimEntity {
      */
     @Override
     public void startEntity() {
-        Log.printLine(getName() + " is starting...");
+        //Log.printLine(getName() + " is starting...");
         schedule(getId(), 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
     }
 
