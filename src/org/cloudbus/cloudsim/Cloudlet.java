@@ -22,7 +22,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public class Cloudlet {
+public class Cloudlet implements Comparable<Cloudlet> {
 
     /**
      * The User or Broker ID. It is advisable that broker set this ID with its
@@ -476,6 +476,17 @@ public class Cloudlet {
         setUtilizationModelCpu(utilizationModelCpu);
         setUtilizationModelRam(utilizationModelRam);
         setUtilizationModelBw(utilizationModelBw);
+    }
+
+    @Override
+    public int compareTo(Cloudlet o) {
+        if (execStartTime > o.getExecStartTime()) {
+            return 1;
+        }
+        if (execStartTime < o.getExecStartTime()) {
+            return -1;
+        }
+        return 0;
     }
 
     // ////////////////////// INTERNAL CLASS ///////////////////////////////////

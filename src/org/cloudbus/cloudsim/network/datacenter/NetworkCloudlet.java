@@ -27,7 +27,7 @@ import org.cloudbus.cloudsim.UtilizationModel;
  * @author Saurabh Kumar Garg
  * @since CloudSim Toolkit 1.0
  */
-public class NetworkCloudlet extends Cloudlet implements Comparable<Object> {
+public class NetworkCloudlet extends Cloudlet {
 
 	long memory;
 
@@ -77,11 +77,6 @@ public class NetworkCloudlet extends Cloudlet implements Comparable<Object> {
 	// consists of.
 
 	public double starttime;
-
-	@Override
-	public int compareTo(Object arg0) {
-		return 0;
-	}
 
 	public double getSubmittime() {
 		return submittime;

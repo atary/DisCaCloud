@@ -88,12 +88,14 @@ public class Datacenter extends SimEntity {
 
     //ATAKAN: <DataObjectID, NeighbourDatacenterID> Log of requests received from neighbours.
     private HashSet<Request> requests;
-    
+
     private static HashMap<Integer, String> labelMap = null;
 
     public static void setLabelMap(HashMap<Integer, String> labelMap) {
         Datacenter.labelMap = labelMap;
     }
+
+    private boolean firstCheckScheduled;
 
     /**
      * Allocates a new PowerDatacenter object.
@@ -149,6 +151,7 @@ public class Datacenter extends SimEntity {
         knownDistances = new HashMap<>();
         requests = new HashSet<>();
         mainStorage = false;
+        firstCheckScheduled = false;
     }
 
     /**
@@ -180,8 +183,11 @@ public class Datacenter extends SimEntity {
                 srcId = ((Integer) ev.getData()).intValue();
                 sendNow(srcId, ev.getTag(), getCharacteristics());
                 // ATAKAN: Schedule the first cache check
-                send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
-
+                if (!firstCheckScheduled) {
+                    firstCheckScheduled = true;
+                    Log.printLine(CloudSim.clock() + ": " + getName() + ": CHECK_DEMAND_FOR_CACHES is scheduled");
+                    send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
+                }
                 break;
 
             case CloudSimTags.CHECK_DEMAND_FOR_CACHES:
@@ -827,6 +833,7 @@ public class Datacenter extends SimEntity {
                         if (c.dataObjectID == dataObjectID) {
                             cl.addDataReceive(dataObjectID);
                             found = true;
+                            Log.printLine(CloudSim.clock() + ": " + getName() + ": Data object #" + c.dataObjectID + " is found locally ");
                             break;
                         }
                     }
@@ -915,6 +922,9 @@ public class Datacenter extends SimEntity {
             //System.out.println(getId() + ": " + "All received.");
             processCloudletResume(data[1], data[2], data[3], false);
         }
+        Log.printLine(CloudSim.clock() + ": " + getName() + ": Data object #" + data[4] + " is received from " + labelMap.get(ev.getSource())
+        );
+
     }
 
     private void processDataNotFound(SimEvent ev) {
@@ -940,12 +950,13 @@ public class Datacenter extends SimEntity {
                 return minId;
             }
         }
-        return locs.iterator().next(); //TODO: Possible bug, recreate by setting num data objects to 1
+        return locs.iterator().next();
     }
 
     // ATAKAN: check for cache operation conditions and initiate the selected operation.
     private void checkCacheConditions() {
         if (!caches.isEmpty()) {
+            Log.printLine(CloudSim.clock() + ": _____" + getName());
             ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
             if (mainStorage) {
                 for (Cache c : caches) {
@@ -953,13 +964,13 @@ public class Datacenter extends SimEntity {
                         double neighbourCost = CloudSim.DcCosts.get(n);
                         if (getDemand(c.dataObjectID, n, 0) > neighbourCost) { //Create Decision
                             send(n, c.length / NetworkTopology.getBw(), CloudSimTags.CREATE_CACHE, c);
-                            Log.printLine(CloudSim.clock() + ": " + getName() + ": Create a new cache for data object #" + c.getDataObjectID() + " in " + labelMap.get(n));
+                            Log.printLine(CloudSim.clock() + ": +" + getName() + ": Create a new cache for data object #" + c.getDataObjectID() + " in " + labelMap.get(n));
                         }
                     }
                 }
             } else {
                 for (Cache c : caches) {
-                    boolean actionTaken = false;
+                    //boolean actionTaken = false;
                     double localCost = CloudSim.DcCosts.get(getId());
                     double allNeighboursDemand = 0;
                     for (int n : neighbours) {
@@ -983,18 +994,19 @@ public class Datacenter extends SimEntity {
 
                         double transferDelay = c.length / NetworkTopology.getBw();
                         if (neighbourDemand > neighbourCost && otherNeighboursDemand > localCost) { //Duplicate Decision
-                            Log.printLine(CloudSim.clock() + ": " + getName() + ": Duplicate cache for data object #" + c.getDataObjectID() + " to " + labelMap.get(n));
+                            Log.printLine(CloudSim.clock() + ": +" + getName() + ": Duplicate cache for data object #" + c.getDataObjectID() + " to " + labelMap.get(n));
                             send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
-                            actionTaken = true;
-                        } else if (allNeighboursDemand - (otherNeighboursIncreasedDemand + neighbourDecreasedDemand) > neighbourCost - localCost) { //Migrate Decision
-                            Log.printLine(CloudSim.clock() + ": " + getName() + ": Migrate cache for data object #" + c.getDataObjectID() + " to " + labelMap.get(n));
+                            break;
+                        }
+                        if (allNeighboursDemand - (otherNeighboursIncreasedDemand + neighbourDecreasedDemand) > neighbourCost - localCost) { //Migrate Decision
+                            Log.printLine(CloudSim.clock() + ": +-" + getName() + ": Migrate cache for data object #" + c.getDataObjectID() + " to " + labelMap.get(n));
                             schedule(getId(), NetworkTopology.getDelay(getId(), n) + transferDelay, CloudSimTags.REMOVE_CACHE, c); //Cache will stay here until create message is delivered.
                             send(n, transferDelay, CloudSimTags.CREATE_CACHE, c);
-                            actionTaken = true;
+                            break;
                         }
                     }
-                    if (!actionTaken && allNeighboursDemand < localCost) { //Remove Decision
-                        Log.printLine(CloudSim.clock() + ": " + getName() + ": Remove cache for data object #" + c.getDataObjectID());
+                    if (allNeighboursDemand < localCost) { //Remove Decision
+                        Log.printLine(CloudSim.clock() + ": -" + getName() + ": Remove cache for data object #" + c.getDataObjectID());
                         scheduleNow(getId(), CloudSimTags.REMOVE_CACHE, c);
                     }
                 }
@@ -1020,14 +1032,13 @@ public class Datacenter extends SimEntity {
         knownDistances.put(ev.getSource(), CloudSim.clock() - ev.creationTime());
         Cache c = (Cache) ev.getData();
 
-        Log.printLine(CloudSim.clock() + ": " + getName() + ": Cache for data object #" + c.getDataObjectID() + " is created");
-
+        if (caches.add(c)) {
+            Log.printLine(CloudSim.clock() + ": +" + getName() + ": Cache for data object #" + c.getDataObjectID() + " is created");
+            Log.cacheStart(getId(), c.dataObjectID);
+            //Notify other DCs for the new cache
+            notifyOtherDCs(CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
+        }
         //TODO: what if capacity is not enough
-        caches.add(c);
-        Log.cacheStart(getId(), c.dataObjectID);
-
-        //Notify other DCs for the new cache
-        notifyOtherDCs(CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
     }
 
     //ATAKAN: Remove a cache from this location
@@ -1035,7 +1046,7 @@ public class Datacenter extends SimEntity {
         Cache c = (Cache) ev.getData();
         if (caches.remove(c)) {
             Log.cacheEnd(getId(), c.dataObjectID, c.length);
-            Log.printLine(CloudSim.clock() + ": " + getName() + ": Cache for data object #" + c.getDataObjectID() + " is removed");
+            Log.printLine(CloudSim.clock() + ": -" + getName() + ": Cache for data object #" + c.getDataObjectID() + " is removed");
         }
 
         //Notify other DCs for the removal
