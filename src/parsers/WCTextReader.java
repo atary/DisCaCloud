@@ -21,7 +21,7 @@ import java.util.Scanner;
 public class WCTextReader {
 
     private Scanner fileScan;
-    
+
     public ArrayList<WCDatum> read(String aFileName) throws FileNotFoundException, ParseException {
         ArrayList<WCDatum> readRecords = new ArrayList<WCDatum>();
 
@@ -31,7 +31,9 @@ public class WCTextReader {
             readAllLines(file, readRecords);
         } else if (file.isDirectory()) {
             for (File f : file.listFiles()) {
-                readAllLines(f, readRecords);
+                if (f.getName().endsWith(".log")) {
+                    readAllLines(f, readRecords);
+                }
             }
         }
 
@@ -70,13 +72,13 @@ public class WCTextReader {
 
         while (s.hasNext()) {
             temp = WCDatum.parseWCDatum(s.nextLine().trim());
-            tempstr = "" + ((temp.getReqTime() - offset)/1000) + "\t" + temp.getClientID() + "\t" + temp.getServerID() + "\t" + temp.getObjSize() + "\n";
+            tempstr = "" + ((temp.getReqTime() - offset) / 1000) + "\t" + temp.getClientID() + "\t" + temp.getServerID() + "\t" + temp.getObjSize() + "\n";
             pw.append(tempstr);
         }
     }
 
     public void open(String fName) throws FileNotFoundException {
-        fileScan=new Scanner(new File(fName));
+        fileScan = new Scanner(new File(fName));
     }
 
     public boolean hasNext() {
@@ -85,11 +87,12 @@ public class WCTextReader {
 
     public List<WCDatum> readNRecords(int limit) {
         LinkedList<WCDatum> wcList = new LinkedList<WCDatum>();
-        int counter=0;
-        
-        while(fileScan.hasNext() && counter++ < limit )
+        int counter = 0;
+
+        while (fileScan.hasNext() && counter++ < limit) {
             wcList.add(new WCDatum(fileScan.nextLine().trim()));
-        
+        }
+
         return wcList;
     }
 
