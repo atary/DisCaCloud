@@ -96,6 +96,8 @@ public class Datacenter extends SimEntity {
     }
 
     private boolean firstCheckScheduled;
+    
+    private int bindedBR;
 
     /**
      * Allocates a new PowerDatacenter object.
@@ -1495,6 +1497,14 @@ public class Datacenter extends SimEntity {
      */
     protected void setSchedulingInterval(double schedulingInterval) {
         this.schedulingInterval = schedulingInterval;
+    }
+
+    public void setBindedBR(int bindedBR) {
+        this.bindedBR = bindedBR;
+    }
+
+    public int getBindedBR() {
+        return bindedBR;
     }
 
     protected static class Cache {

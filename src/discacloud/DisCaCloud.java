@@ -1,13 +1,24 @@
 package discacloud;
 
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CityResponse;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
@@ -29,6 +40,8 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import parsers.WSharkDatum;
+import parsers.WSharkTextReader;
 
 public class DisCaCloud {
 
@@ -36,7 +49,7 @@ public class DisCaCloud {
     private static int clid = 0;
     private static DecimalFormat dft = new DecimalFormat("00.0");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, UnknownHostException, IOException {
         //Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
@@ -51,41 +64,76 @@ public class DisCaCloud {
             //CONFIGURATION
             CloudSim.setCacheQuantum(50);
             CloudSim.setAggression(0.005);
-            int dataObjectCount = 2;
-            int dataObjectLength = 100;
-            int mainDcIndex = 0;
+            int mainDcId = -1;
+            int planeSize = 1000;
 
-            ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
+            //ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
             HashMap<Integer, String> labelMap = new HashMap<>();
-            NetworkTopology.buildNetworkTopology("C:\\federica.brite");
+            NetworkTopology.buildNetworkTopology("C:\\atakan.brite");
 
-            ArrayList<Datacenter> dcList = new ArrayList<>();
-            ArrayList<DatacenterBroker> brList = new ArrayList<>();
+            HashMap<Integer,Datacenter> dcList = new HashMap<>();
+            HashMap<Integer,DatacenterBroker> brList = new HashMap<>();
+            HashSet<Integer> dataObjectIds = new HashSet<>();
 
-            for (int i = 0; i < 15; i++) {
-                Datacenter dc = createDatacenter(labels.get(i));
-                dcList.add(dc);
+            for (int i = 0; i < 100; i++) {
+                Datacenter dc = createDatacenter("DC_"+i); //labels.get(i)
+                dcList.put(dc.getId(), dc);
                 NetworkTopology.mapNode(dc.getId(), i);
+                mainDcId = dc.getId();
             }
+            
 
-            for (int i = 0; i < dataObjectCount; i++) {
-                dcList.get(mainDcIndex).addDataToMainDC(i, dataObjectLength); //GARR is the main DC
-            }
+            /*for (int i = 0; i < dataObjectCount; i++) {
+                dcList.get(mainDcId).addDataToMainDC(i, dataObjectLength); //GARR is the main DC
+            }*/
 
-            for (Datacenter dc : dcList) {
+            for (Datacenter dc : dcList.values()) {
                 labelMap.put(dc.getId(), dc.getName());
                 String name = dc.getName() + "_BROKER";
-                labels.add(name);
+                //labels.add(name);
                 DatacenterBroker br = createBroker(name);
                 br.setBindedDC(dc.getId());
-                brList.add(br);
+                dc.setBindedBR(br.getId());
+                brList.put(br.getId(),br);
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
             Datacenter.setLabelMap(labelMap);
+            
+            WSharkTextReader wsReader = new WSharkTextReader();
+            File GeoDatabase = new File("C:\\GeoLite2-City.mmdb");
+            DatabaseReader reader = new DatabaseReader.Builder(GeoDatabase).build();
 
-            int mainDcId = dcList.get(mainDcIndex).getId();
+            wsReader.open("wSharkLogs/juice.txt");
+            for (WSharkDatum w : wsReader.readNRecords(1000)) {
+                InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
-            createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1));
+                CityResponse clientCity;
+
+                try {
+                    clientCity = reader.city(clientIP);
+                } catch (GeoIp2Exception ex) {
+                    continue;
+                }
+                
+                double lat = clientCity.getLocation().getLatitude();
+                double lon = clientCity.getLocation().getLongitude();
+                
+                double x = (lat + 90) * planeSize / 180;
+                double y = (lon + 180) * planeSize / 360;
+                
+                Datacenter closestDc = dcList.get(NetworkTopology.getClosestNodeId(x, y));
+                DatacenterBroker closestBr = brList.get(closestDc.getBindedBR());
+                
+                createLoad(mainDcId, closestDc, closestBr, (int)w.getReqTime(), Arrays.asList(w.getServerID().hashCode()));
+                int dataObjectId = w.getServerID().hashCode();
+                if(dataObjectIds.add(dataObjectId)){
+                    dcList.get(mainDcId).addDataToMainDC(dataObjectId, w.getLength());
+                }          
+                //System.out.println("From " + clientCity.getLocation().toString() + " to " + serverCity.getLocation().toString() + " at " + w.getReqTime());
+            }
+            
+
+            /*createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 120, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 180, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 190, Arrays.asList(1));
@@ -96,7 +144,7 @@ public class DisCaCloud {
             createLoad(mainDcId, dcList.get(7), brList.get(7), 180, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 190, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 220, Arrays.asList(1));
-            createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));
+            createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));*/
 
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
@@ -105,12 +153,12 @@ public class DisCaCloud {
 
             //Final step: Print results when simulation is over
             List<Cloudlet> newList = new ArrayList<>();
-            for(DatacenterBroker br : brList){
+            for (DatacenterBroker br : brList.values()) {
                 newList.addAll(br.getCloudletReceivedList());
             }
-            
+
             Collections.sort(newList);
-                    
+
             printCloudletList(newList);
 
             Log.printLine("Total Cost: " + (int) Log.getTotalCost());
@@ -228,11 +276,10 @@ public class DisCaCloud {
         String indent = "\t";
         Log.printLine();
         Log.printLine("========== OUTPUT ==========");
-        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + indent 
+        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + indent
                 + "DC ID" + indent + "VM ID" + indent + "Time" + indent
                 + "Start" + indent + "Finish");
 
-        
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
             Log.print(cloudlet.getCloudletId() + indent + indent);
@@ -245,7 +292,7 @@ public class DisCaCloud {
                         + indent
                         + dft.format(cloudlet.getActualCPUTime()) + indent
                         + dft.format(cloudlet.getExecStartTime())
-                        + indent 
+                        + indent
                         + dft.format(cloudlet.getFinishTime()));
             }
         }

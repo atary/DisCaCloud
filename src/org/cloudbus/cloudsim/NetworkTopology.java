@@ -37,21 +37,21 @@ import org.cloudbus.cloudsim.network.TopologicalNode;
  * @since CloudSim Toolkit 1.0
  */
 public class NetworkTopology {
-    
+
     protected static int nextIdx = 0;
-    
+
     private static boolean networkEnabled = false;
-    
+
     protected static DelayMatrix_Float delayMatrix = null;
-    
+
     protected static double[][] bwMatrix = null;
-    
+
     protected static double bw = 0;
-    
+
     protected static TopologicalGraph graph = null;
-    
+
     protected static Map<Integer, Integer> map = null;
-    
+
     public static double getBw() {
         return bw;
     }
@@ -70,7 +70,7 @@ public class NetworkTopology {
 
         // try to find the file
         GraphReaderBrite reader = new GraphReaderBrite();
-        
+
         try {
             graph = reader.readGraphFile(fileName);
             map = new HashMap<Integer, Integer>();
@@ -81,7 +81,7 @@ public class NetworkTopology {
             Log.printLine("Problem in processing BRITE file. Network simulation is disabled. Error: "
                     + e.getMessage());
         }
-        
+
     }
 
     /**
@@ -94,7 +94,7 @@ public class NetworkTopology {
 
         // creates the bw matrix
         bwMatrix = createBwMatrix(graph, false);
-        
+
         networkEnabled = true;
     }
 
@@ -114,7 +114,7 @@ public class NetworkTopology {
         if (graph == null) {
             graph = new TopologicalGraph();
         }
-        
+
         if (map == null) {
             map = new HashMap<Integer, Integer>();
         }
@@ -125,7 +125,7 @@ public class NetworkTopology {
             map.put(srcId, nextIdx);
             nextIdx++;
         }
-        
+
         if (!map.containsKey(destId)) {
             graph.addNode(new TopologicalNode(nextIdx));
             map.put(destId, nextIdx);
@@ -134,9 +134,9 @@ public class NetworkTopology {
 
         // generate a new link
         graph.addLink(new TopologicalLink(map.get(srcId), map.get(destId), (float) lat, (float) bw));
-        
+
         generateMatrices();
-        
+
     }
 
     /**
@@ -148,7 +148,7 @@ public class NetworkTopology {
      */
     private static double[][] createBwMatrix(TopologicalGraph graph, boolean directed) {
         int nodes = graph.getNumberOfNodes();
-        
+
         double[][] mtx = new double[nodes][nodes];
 
         // cleanup matrix
@@ -157,18 +157,18 @@ public class NetworkTopology {
                 mtx[i][j] = 0.0;
             }
         }
-        
+
         Iterator<TopologicalLink> iter = graph.getLinkIterator();
         while (iter.hasNext()) {
             TopologicalLink edge = iter.next();
-            
+
             mtx[edge.getSrcNodeID()][edge.getDestNodeID()] = edge.getLinkBw();
-            
+
             if (!directed) {
                 mtx[edge.getDestNodeID()][edge.getSrcNodeID()] = edge.getLinkBw();
             }
         }
-        
+
         return mtx;
     }
 
@@ -236,13 +236,28 @@ public class NetworkTopology {
             try {
                 // add the network latency
                 double delay = delayMatrix.getDelay(map.get(srcID), map.get(destID));
-                
+
                 return delay;
             } catch (Exception e) {
                 // in case of error, just keep running and return 0.0
             }
         }
         return 0.0;
+    }
+
+    public static int getClosestNodeId(double x, double y) {
+        int minID = -1;
+        double minError = Double.MAX_VALUE;
+        Iterator<TopologicalNode> iter = graph.getNodeIterator();
+        while (iter.hasNext()) {
+            TopologicalNode n = iter.next();
+            double error = Math.pow(x - n.getCoordinateX(), 2) + Math.pow(y - n.getCoordinateY(), 2);
+            if(error<minError){
+                minID = inverseMap(n.getNodeID());
+                minError = error;
+            }
+        }
+        return minID;
     }
 
     // ATAKAN: Returns the node preceeding the destination on the shortest path from source to destination.
@@ -256,14 +271,14 @@ public class NetworkTopology {
         for (int i = 0; i < bwMatrix.length; i++) {
             if (bwMatrix[i][map.get(destinationId)] > 0) {
                 int id = inverseMap(i);
-                if (CloudSim.DcCosts.containsKey(id)) {
+                if (id>0 && CloudSim.DcCosts.containsKey(id)) {
                     IDs.add(id);
                 }
             }
         }
         return IDs;
     }
-    
+
     private static int inverseMap(int id) {
         for (int i : map.keySet()) {
             if (map.get(i) == id) {
@@ -287,5 +302,5 @@ public class NetworkTopology {
     public static boolean isNetworkEnabled() {
         return networkEnabled;
     }
-    
+
 }
