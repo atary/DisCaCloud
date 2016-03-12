@@ -157,4 +157,25 @@ public class DelayMatrix_Float {
 
         return buffer.toString();
     }
+
+    public double getCentrality(int id) {
+        double delay = 0.0;
+        for (int i = 0; i < mDelayMatrix[id].length; i++) {
+            delay += mDelayMatrix[id][i];
+        }
+        return delay;
+    }
+
+    public int getMostCentralNode() {
+        double minCentrality = Double.MAX_VALUE;
+        int mostCentralNode = -1;
+        for (int j = 0; j < mDelayMatrix.length; j++) {
+            double centrality = getCentrality(j);
+            if (centrality < minCentrality) {
+                minCentrality = centrality;
+                mostCentralNode = j;
+            }
+        }
+        return mostCentralNode;
+    }
 }

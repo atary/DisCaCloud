@@ -18,12 +18,12 @@ import java.util.Scanner;
  *
  * @author ovatman
  */
-public class WCTextReader {
+public class WCTextReader implements RequestTextReaderInterface{
 
     private Scanner fileScan;
 
-    public ArrayList<WCDatum> read(String aFileName) throws FileNotFoundException, ParseException {
-        ArrayList<WCDatum> readRecords = new ArrayList<WCDatum>();
+    public ArrayList<RequestDatum> read(String aFileName) throws FileNotFoundException, ParseException {
+        ArrayList<RequestDatum> readRecords = new ArrayList<RequestDatum>();
 
         File file = new File(aFileName);
 
@@ -41,7 +41,7 @@ public class WCTextReader {
 
     }
 
-    private void readAllLines(File f, ArrayList<WCDatum> readRecords) throws FileNotFoundException, ParseException {
+    private void readAllLines(File f, ArrayList<RequestDatum> readRecords) throws FileNotFoundException, ParseException {
         Scanner s = new Scanner(f);
 
         while (s.hasNext()) {
@@ -72,7 +72,7 @@ public class WCTextReader {
 
         while (s.hasNext()) {
             temp = WCDatum.parseWCDatum(s.nextLine().trim());
-            tempstr = "" + ((temp.getReqTime() - offset) / 1000) + "\t" + temp.getClientID() + "\t" + temp.getServerID() + "\t" + temp.getObjSize() + "\n";
+            tempstr = "" + ((temp.getReqTime() - offset) / 1000) + "\t" + temp.getClientID() + "\t" + temp.getServerID() + "\t" + temp.getLength()+ "\n";
             pw.append(tempstr);
         }
     }
@@ -85,8 +85,8 @@ public class WCTextReader {
         return fileScan.hasNext();
     }
 
-    public List<WCDatum> readNRecords(int limit) {
-        LinkedList<WCDatum> wcList = new LinkedList<WCDatum>();
+    public List<RequestDatum> readNRecords(int limit) {
+        LinkedList<RequestDatum> wcList = new LinkedList<>();
         int counter = 0;
 
         while (fileScan.hasNext() && counter++ < limit) {

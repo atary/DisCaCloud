@@ -17,8 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Random;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
@@ -34,14 +33,15 @@ import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
-import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.VmSchedulerTimeSharedOverSubscription;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
-import parsers.WSharkDatum;
+import parsers.RequestDatum;
+import parsers.RequestTextReaderInterface;
+import parsers.WCTextReader;
 import parsers.WSharkTextReader;
 
 public class DisCaCloud {
@@ -65,28 +65,30 @@ public class DisCaCloud {
             //CONFIGURATION
             CloudSim.setCacheQuantum(500);
             CloudSim.setAggression(1);
-            int mainDcId = 89;
+            int mainDcId = 13;
             int planeSize = 1000;
+            boolean geoLocation = false;
+            String requestFile = "wcLogs/juice.txt";
+            RequestTextReaderInterface wsReader = new WCTextReader();
 
             //ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
             HashMap<Integer, String> labelMap = new HashMap<>();
             NetworkTopology.buildNetworkTopology("C:\\atakan.brite");
 
-            HashMap<Integer,Datacenter> dcList = new HashMap<>();
-            HashMap<Integer,DatacenterBroker> brList = new HashMap<>();
+            HashMap<Integer, Datacenter> dcList = new HashMap<>();
+            HashMap<Integer, DatacenterBroker> brList = new HashMap<>();
             HashSet<Integer> dataObjectIds = new HashSet<>();
 
             for (int i = 0; i < 100; i++) {
-                Datacenter dc = createDatacenter("DC_"+i); //labels.get(i)
+                Datacenter dc = createDatacenter("DC_" + i); //labels.get(i)
                 dcList.put(dc.getId(), dc);
                 NetworkTopology.mapNode(dc.getId(), i);
             }
-            
+
 
             /*for (int i = 0; i < dataObjectCount; i++) {
                 dcList.get(mainDcId).addDataToMainDC(i, dataObjectLength); //GARR is the main DC
             }*/
-
             for (Datacenter dc : dcList.values()) {
                 labelMap.put(dc.getId(), dc.getName());
                 String name = dc.getName() + "_BROKER";
@@ -94,44 +96,51 @@ public class DisCaCloud {
                 DatacenterBroker br = createBroker(name);
                 br.setBindedDC(dc.getId());
                 dc.setBindedBR(br.getId());
-                brList.put(br.getId(),br);
+                brList.put(br.getId(), br);
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
             Datacenter.setLabelMap(labelMap);
-            
-            WSharkTextReader wsReader = new WSharkTextReader();
-            File GeoDatabase = new File("C:\\GeoLite2-City.mmdb");
-            DatabaseReader reader = new DatabaseReader.Builder(GeoDatabase).build();
 
-            wsReader.open("wSharkLogs/juice.txt");
-            for (WSharkDatum w : wsReader.readNRecords(1000)) {
-                InetAddress clientIP = InetAddress.getByName(w.getClientID());
+            File GeoDatabase = null;
+            DatabaseReader reader = null;
+            if (geoLocation) {
+                GeoDatabase = new File("C:\\GeoLite2-City.mmdb");
+                reader = new DatabaseReader.Builder(GeoDatabase).build();
+            }
+            wsReader.open(requestFile);
+            for (RequestDatum w : wsReader.readNRecords(1000)) {
+                Datacenter selectedDC = null;
+                if (geoLocation) {
+                    InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
-                CityResponse clientCity;
+                    CityResponse clientCity;
 
-                try {
-                    clientCity = reader.city(clientIP);
-                } catch (GeoIp2Exception ex) {
-                    continue;
+                    try {
+                        clientCity = reader.city(clientIP);
+                    } catch (GeoIp2Exception ex) {
+                        continue;
+                    }
+
+                    double lat = clientCity.getLocation().getLatitude();
+                    double lon = clientCity.getLocation().getLongitude();
+
+                    double x = (lat + 90) * planeSize / 180;
+                    double y = (lon + 180) * planeSize / 360;
+
+                    selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
+                } else {
+                    Object[] values = dcList.values().toArray(); //BURADA KALDI
+                    Object randomValue = values[w.getClientID().hashCode()%values.length];
+                    selectedDC = (Datacenter)randomValue;
                 }
-                
-                double lat = clientCity.getLocation().getLatitude();
-                double lon = clientCity.getLocation().getLongitude();
-                
-                double x = (lat + 90) * planeSize / 180;
-                double y = (lon + 180) * planeSize / 360;
-                
-                Datacenter closestDc = dcList.get(NetworkTopology.getClosestNodeId(x, y));
-                DatacenterBroker closestBr = brList.get(closestDc.getBindedBR());
-                
-                createLoad(mainDcId, closestDc, closestBr, (int)w.getReqTime(), Arrays.asList(w.getServerID().hashCode()));
+                DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
+                createLoad(mainDcId, selectedDC, selectedBR, (int) w.getReqTime(), Arrays.asList(w.getServerID().hashCode()));
                 int dataObjectId = w.getServerID().hashCode();
-                if(dataObjectIds.add(dataObjectId)){
+                if (dataObjectIds.add(dataObjectId)) {
                     dcList.get(mainDcId).addDataToMainDC(dataObjectId, w.getLength());
-                }          
+                }
                 //System.out.println("From " + clientCity.getLocation().toString() + " to " + serverCity.getLocation().toString() + " at " + w.getReqTime());
             }
-            
 
             /*createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(6), brList.get(6), 120, Arrays.asList(1));
@@ -145,7 +154,6 @@ public class DisCaCloud {
             createLoad(mainDcId, dcList.get(7), brList.get(7), 190, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 220, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));*/
-
             // Sixth step: Starts the simulation
             CloudSim.startSimulation();
 
@@ -154,18 +162,25 @@ public class DisCaCloud {
             //Final step: Print results when simulation is over
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
-                newList.addAll(br.getCloudletReceivedList());
+                newList.addAll(br.getCloudletSubmittedList());
             }
-            
+
             Log.enable();
 
             Collections.sort(newList);
 
             printCloudletList(newList);
 
+            Log.printLine("Number of Unique Data Objects: " + dataObjectIds.size());
+            Log.printLine("Number of Data Objects Received from Main DC: " + Log.getDataReturnedFromMainDC());
+            Log.printLine("Number of Data Objects Received from a Cache: " + Log.getDataReturnedFromCache());
+            Log.printLine("Number of Data Objects Found in Local Cache: " + Log.getDataFoundInLocalCache());
+            Log.printLine("Number of Data Objects Found in Local Main DC: " + Log.getDataFoundInLocalMainDC());
+            Log.printLine("Number of Data Objects Not Found Initially: " + Log.getDataNotFound());
             Log.printLine("Total Cost: " + (int) Log.getTotalCost());
             Log.printLine("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
             Log.printLine("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+            Log.printLine("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -199,7 +214,7 @@ public class DisCaCloud {
         // 4. Create Host with its id and list of PEs and add them to the list
         // of machines
         int hostId = 0;
-        int ram = 100*1024; // host memory (MB)
+        int ram = 100 * 1024; // host memory (MB)
         long storage = 100000000; // host storage
         int bw = 1000000;
 
@@ -288,15 +303,17 @@ public class DisCaCloud {
 
             if (cloudlet.getCloudletStatus() == Cloudlet.SUCCESS) {
                 Log.print("SUCCESS");
-
-                Log.printLine(indent + indent + cloudlet.getResourceId()
-                        + indent + cloudlet.getVmId()
-                        + indent
-                        + dft.format(cloudlet.getActualCPUTime()) + indent
-                        + dft.format(cloudlet.getExecStartTime())
-                        + indent
-                        + dft.format(cloudlet.getFinishTime()));
+            } else {
+                Log.print("FAILED");
             }
+            Log.printLine(indent + indent + cloudlet.getResourceId()
+                    + indent + cloudlet.getVmId()
+                    + indent
+                    + dft.format(cloudlet.getActualCPUTime()) + indent
+                    + dft.format(cloudlet.getExecStartTime())
+                    + indent
+                    + dft.format(cloudlet.getFinishTime()));
+
         }
     }
 

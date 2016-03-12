@@ -22,12 +22,12 @@ import java.util.Scanner;
  *
  * @author ovatman
  */
-public class WSharkTextReader {
+public class WSharkTextReader implements RequestTextReaderInterface{
 
     private Scanner fileScan;
     
-    public ArrayList<WSharkDatum> read(String aFileName) throws FileNotFoundException, ParseException {
-        ArrayList<WSharkDatum> readRecords = new ArrayList<WSharkDatum>();
+    public ArrayList<RequestDatum> read(String aFileName) throws FileNotFoundException, ParseException {
+        ArrayList<RequestDatum> readRecords = new ArrayList<RequestDatum>();
         
         File file = new File(aFileName);
         
@@ -45,7 +45,7 @@ public class WSharkTextReader {
         
     }
     
-    private void readAllLines(File f, ArrayList<WSharkDatum> readRecords) throws FileNotFoundException, ParseException {
+    private void readAllLines(File f, ArrayList<RequestDatum> readRecords) throws FileNotFoundException, ParseException {
         Scanner s = new Scanner(f);
         String line;
         
@@ -96,8 +96,8 @@ public class WSharkTextReader {
         return fileScan.hasNext();
     }
     
-    public List<WSharkDatum> readNRecords(int limit) {
-        LinkedList<WSharkDatum> wsList = new LinkedList<WSharkDatum>();
+    public List<RequestDatum> readNRecords(int limit) {
+        LinkedList<RequestDatum> wsList = new LinkedList<>();
         int counter = 0;
         
         while (fileScan.hasNext() && counter++ < limit) {

@@ -81,7 +81,6 @@ public class NetworkTopology {
             Log.printLine("Problem in processing BRITE file. Network simulation is disabled. Error: "
                     + e.getMessage());
         }
-
     }
 
     /**
@@ -245,6 +244,14 @@ public class NetworkTopology {
         return 0.0;
     }
 
+    public static double getDcCentrality(int srcID) {
+        return delayMatrix.getCentrality(map.get(srcID));
+    }
+    
+    public static int getMostCentralDc(){
+        return inverseMap(delayMatrix.getMostCentralNode());
+    }
+
     public static int getClosestNodeId(double x, double y) {
         int minID = -1;
         double minError = Double.MAX_VALUE;
@@ -252,7 +259,7 @@ public class NetworkTopology {
         while (iter.hasNext()) {
             TopologicalNode n = iter.next();
             double error = Math.pow(x - n.getCoordinateX(), 2) + Math.pow(y - n.getCoordinateY(), 2);
-            if(error<minError){
+            if (error < minError) {
                 minID = inverseMap(n.getNodeID());
                 minError = error;
             }
@@ -271,7 +278,7 @@ public class NetworkTopology {
         for (int i = 0; i < bwMatrix.length; i++) {
             if (bwMatrix[i][map.get(destinationId)] > 0) {
                 int id = inverseMap(i);
-                if (id>0 && CloudSim.DcCosts.containsKey(id)) {
+                if (id > 0 && CloudSim.DcCosts.containsKey(id)) {
                     IDs.add(id);
                 }
             }

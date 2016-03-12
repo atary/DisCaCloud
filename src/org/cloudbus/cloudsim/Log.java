@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.PrintFile;
 
 /**
@@ -27,6 +28,89 @@ public class Log {
      * The Constant LINE_SEPARATOR.
      */
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    
+    private static int fromCache = 0;
+    private static int fromMain = 0;
+    private static int fromLocal = 0;
+    private static int fromLocalMain = 0;
+    private static int fail = 0;
+    
+    public static void dataReturnedFromCache(){
+        fromCache++;
+    }
+    
+    public static void dataReturnedFromMainDC(){
+        fromMain++;
+    }
+    
+    public static void dataFoundInLocalCache(){
+        fromLocal++;
+    }
+    
+    public static void dataFoundInLocalMainDC(){
+        fromLocalMain++;
+    }
+    
+    public static void dataNotFound(){
+        fail++;
+    }
+    
+    public static int getDataFoundInLocalCache(){
+        return fromLocal;
+    }
+    
+    public static int getDataFoundInLocalMainDC(){
+        return fromLocalMain;
+    }
+
+    public static int getDataReturnedFromCache() {
+        return fromCache;
+    }
+
+    public static int getDataReturnedFromMainDC() {
+        return fromMain;
+    }
+
+    public static int getDataNotFound() {
+        return fail;
+    }
+    
+    private static int creation = 0;
+    private static int removal = 0;
+    private static int migration = 0;
+    private static int duplication = 0;
+    
+    public static void creation(){
+        creation++;
+    }
+    
+    public static void removal(){
+        removal++;
+    }
+    
+    public static void migration(){
+        migration++;
+    }
+    
+    public static void duplication(){
+        duplication++;
+    }
+
+    public static int getCreation() {
+        return creation;
+    }
+
+    public static int getRemoval() {
+        return removal;
+    }
+
+    public static int getMigration() {
+        return migration;
+    }
+
+    public static int getDuplication() {
+        return duplication;
+    }
 
     /**
      * The output.

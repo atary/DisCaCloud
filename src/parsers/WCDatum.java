@@ -16,12 +16,7 @@ import java.util.Locale;
  *
  * @author ovatman
  */
-public class WCDatum {
-
-    private long reqTime;
-    private int clientID;
-    private int length;
-    private int serverID;
+public class WCDatum extends RequestDatum{
 
     public static WCDatum parseWCDatum(String line) throws ParseException {
         WCDatum wc = new WCDatum();
@@ -42,25 +37,9 @@ public class WCDatum {
     public WCDatum(String str) {
         String[] s = str.split("\t");
         reqTime=Long.parseLong(s[0]);
-        clientID=Integer.parseInt(s[1]);
+        clientID=s[1];
         length=Integer.parseInt(s[2]);
-        serverID=Integer.parseInt(s[3]);
-    }
-
-    public long getReqTime() {
-        return reqTime;
-    }
-
-    public int getClientID() {
-        return clientID;
-    }
-
-    public int getObjSize() {
-        return length;
-    }
-
-    public int getServerID() {
-        return serverID;
+        serverID=s[3];
     }
 
     private void parseReqTime(String str) throws ParseException {
@@ -72,7 +51,7 @@ public class WCDatum {
     }
 
     private void parseClientID(String str) {
-        clientID = Integer.parseInt(str);
+        clientID = str;
     }
 
     private void parseObjSize(String str) {
@@ -89,8 +68,7 @@ public class WCDatum {
     }
 
     private void parseServerID(String str) {
-
-        serverID = str.hashCode();
+        serverID = str;
     }
 
 }
