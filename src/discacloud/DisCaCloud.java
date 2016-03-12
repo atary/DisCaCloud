@@ -35,6 +35,7 @@ import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
+import org.cloudbus.cloudsim.VmSchedulerTimeSharedOverSubscription;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
@@ -50,21 +51,21 @@ public class DisCaCloud {
     private static DecimalFormat dft = new DecimalFormat("00.0");
 
     public static void main(String[] args) throws FileNotFoundException, UnknownHostException, IOException {
-        //Log.disable();
+        Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
 
         try {
-            int num_user = 15;
+            int num_user = 100;
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false;
 
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(50);
-            CloudSim.setAggression(0.005);
-            int mainDcId = -1;
+            CloudSim.setCacheQuantum(500);
+            CloudSim.setAggression(1);
+            int mainDcId = 89;
             int planeSize = 1000;
 
             //ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
@@ -79,7 +80,6 @@ public class DisCaCloud {
                 Datacenter dc = createDatacenter("DC_"+i); //labels.get(i)
                 dcList.put(dc.getId(), dc);
                 NetworkTopology.mapNode(dc.getId(), i);
-                mainDcId = dc.getId();
             }
             
 
@@ -156,6 +156,8 @@ public class DisCaCloud {
             for (DatacenterBroker br : brList.values()) {
                 newList.addAll(br.getCloudletReceivedList());
             }
+            
+            Log.enable();
 
             Collections.sort(newList);
 
@@ -197,9 +199,9 @@ public class DisCaCloud {
         // 4. Create Host with its id and list of PEs and add them to the list
         // of machines
         int hostId = 0;
-        int ram = 2048; // host memory (MB)
-        long storage = 1000000; // host storage
-        int bw = 10000;
+        int ram = 100*1024; // host memory (MB)
+        long storage = 100000000; // host storage
+        int bw = 1000000;
 
         hostList.add(
                 new Host(
@@ -208,7 +210,7 @@ public class DisCaCloud {
                         new BwProvisionerSimple(bw),
                         storage,
                         peList,
-                        new VmSchedulerTimeShared(peList)
+                        new VmSchedulerTimeSharedOverSubscription(peList)
                 )
         ); // This is our machine
 
