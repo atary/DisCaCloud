@@ -13,6 +13,13 @@ import java.text.ParseException;
  */
 public class WSharkDatum extends RequestDatum {
 
+    public WSharkDatum(String str) {
+        super(str);
+    }
+
+    public WSharkDatum() {
+    }
+
     public static WSharkDatum parseWSharkDatum(String line) throws ParseException {
         WSharkDatum wc = new WSharkDatum();
         String[] lineArr = line.split(" ");
@@ -23,18 +30,6 @@ public class WSharkDatum extends RequestDatum {
         wc.parseObjID(lineArr[5]);
 
         return wc;
-    }
-
-    private WSharkDatum() {
-
-    }
-
-    public WSharkDatum(String str) {
-        String[] s = str.split("\t");
-        reqTime = Long.parseLong(s[0]);
-        clientID = s[1];
-        serverID = s[2];
-        length = Integer.parseInt(s[3]);
     }
 
     private void parseReqTime(String str) throws ParseException {

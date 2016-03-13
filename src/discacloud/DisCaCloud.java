@@ -48,7 +48,7 @@ public class DisCaCloud {
 
     private static int vmid = 0;
     private static int clid = 0;
-    private static DecimalFormat dft = new DecimalFormat("00.0");
+    private static DecimalFormat dft = new DecimalFormat("###,#00.0");
 
     public static void main(String[] args) throws FileNotFoundException, UnknownHostException, IOException {
         Log.disable();
@@ -63,13 +63,15 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(500);
+            CloudSim.setCacheQuantum(900);
             CloudSim.setAggression(1);
-            int mainDcId = 13;
+            int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = false;
             String requestFile = "wcLogs/juice.txt";
             RequestTextReaderInterface wsReader = new WCTextReader();
+            int numRecords = 1000;
+            int numRequests = 0;
 
             //ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
             HashMap<Integer, String> labelMap = new HashMap<>();
@@ -100,6 +102,7 @@ public class DisCaCloud {
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
             Datacenter.setLabelMap(labelMap);
+            mainDcId = NetworkTopology.getMostCentralDc();
 
             File GeoDatabase = null;
             DatabaseReader reader = null;
@@ -108,7 +111,7 @@ public class DisCaCloud {
                 reader = new DatabaseReader.Builder(GeoDatabase).build();
             }
             wsReader.open(requestFile);
-            for (RequestDatum w : wsReader.readNRecords(1000)) {
+            for (RequestDatum w : wsReader.readNRecords(numRecords)) {
                 Datacenter selectedDC = null;
                 if (geoLocation) {
                     InetAddress clientIP = InetAddress.getByName(w.getClientID());
@@ -130,16 +133,17 @@ public class DisCaCloud {
                     selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
                 } else {
                     Object[] values = dcList.values().toArray(); //BURADA KALDI
-                    Object randomValue = values[w.getClientID().hashCode()%values.length];
-                    selectedDC = (Datacenter)randomValue;
+                    Object randomValue = values[Math.abs(w.getClientID().hashCode()) % values.length];
+                    selectedDC = (Datacenter) randomValue;
                 }
                 DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
                 createLoad(mainDcId, selectedDC, selectedBR, (int) w.getReqTime(), Arrays.asList(w.getServerID().hashCode()));
+                numRequests++;
                 int dataObjectId = w.getServerID().hashCode();
                 if (dataObjectIds.add(dataObjectId)) {
-                    dcList.get(mainDcId).addDataToMainDC(dataObjectId, w.getLength());
+                    dcList.get(mainDcId).addDataToMainDC(dataObjectId, (w.getLength()));
                 }
-                //System.out.println("From " + clientCity.getLocation().toString() + " to " + serverCity.getLocation().toString() + " at " + w.getReqTime());
+                //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
 
             /*createLoad(mainDcId, dcList.get(6), brList.get(6), 100, Arrays.asList(1));
@@ -162,25 +166,28 @@ public class DisCaCloud {
             //Final step: Print results when simulation is over
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
-                newList.addAll(br.getCloudletSubmittedList());
+                newList.addAll(br.getCloudletReceivedList());
             }
 
-            Log.enable();
+            if (!Log.isDisabled()) {
+                Collections.sort(newList);
+                printCloudletList(newList);
+            }
 
-            Collections.sort(newList);
-
-            printCloudletList(newList);
-
-            Log.printLine("Number of Unique Data Objects: " + dataObjectIds.size());
-            Log.printLine("Number of Data Objects Received from Main DC: " + Log.getDataReturnedFromMainDC());
-            Log.printLine("Number of Data Objects Received from a Cache: " + Log.getDataReturnedFromCache());
-            Log.printLine("Number of Data Objects Found in Local Cache: " + Log.getDataFoundInLocalCache());
-            Log.printLine("Number of Data Objects Found in Local Main DC: " + Log.getDataFoundInLocalMainDC());
-            Log.printLine("Number of Data Objects Not Found Initially: " + Log.getDataNotFound());
-            Log.printLine("Total Cost: " + (int) Log.getTotalCost());
-            Log.printLine("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
-            Log.printLine("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
-            Log.printLine("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
+            System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+            System.out.println("Finish Time: " + dft.format(newList.get(newList.size() - 1).getFinishTime()));
+            System.out.println("Number of Requests: " + numRequests);
+            System.out.println("Number of Successful Requests: " + newList.size());
+            System.out.println("Number of Unique Data Objects: " + dataObjectIds.size());
+            System.out.println("Number of Data Objects Received from Main DC: " + Log.getDataReturnedFromMainDC());
+            System.out.println("Number of Data Objects Received from a Cache: " + Log.getDataReturnedFromCache());
+            System.out.println("Number of Data Objects Found in Local Cache: " + Log.getDataFoundInLocalCache());
+            System.out.println("Number of Data Objects Found in Local Main DC: " + Log.getDataFoundInLocalMainDC());
+            System.out.println("Number of Data Objects Not Found Initially: " + Log.getDataNotFound());
+            System.out.println("Total Cost: " + dft.format(Log.getTotalCost()));
+            System.out.println("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
+            System.out.println("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+            System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
 
         } catch (Exception e) {
             e.printStackTrace();

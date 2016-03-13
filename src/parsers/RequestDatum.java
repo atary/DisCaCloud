@@ -22,4 +22,17 @@ public abstract class RequestDatum {
     public int getLength() {
         return length;
     }
+
+    public RequestDatum(String str) {
+        String[] s = str.split("\t");
+        reqTime=Long.parseLong(s[0]);
+        clientID=s[1];
+        serverID=s[2];
+        length=Integer.parseInt(s[3]);
+    }
+    
+    public RequestDatum(){
+    }
+    
+    
 }

@@ -30,16 +30,12 @@ public class WCDatum extends RequestDatum{
         return wc;
     }
 
-    private WCDatum() {
-
-    }
-
     public WCDatum(String str) {
-        String[] s = str.split("\t");
-        reqTime=Long.parseLong(s[0]);
-        clientID=s[1];
-        length=Integer.parseInt(s[2]);
-        serverID=s[3];
+        super(str);
+    }
+    
+    public WCDatum() {
+        super();
     }
 
     private void parseReqTime(String str) throws ParseException {
