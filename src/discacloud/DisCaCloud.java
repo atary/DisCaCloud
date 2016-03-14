@@ -64,7 +64,7 @@ public class DisCaCloud {
 
             //CONFIGURATION
             CloudSim.setCacheQuantum(200);
-            CloudSim.setAggression(0.011);
+            CloudSim.setAggression(0.0);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = false;

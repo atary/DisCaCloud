@@ -77,7 +77,7 @@ public class Datacenter extends SimEntity {
     public void addDataToMainDC(int dataObjectID, int length) {
         mainStorage = true;
         caches.add(new Cache(dataObjectID, length));
-        Log.cacheStart(getId(), dataObjectID);
+        //Log.cacheStart(getId(), dataObjectID);
     }
 
     //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
@@ -1356,6 +1356,7 @@ public class Datacenter extends SimEntity {
      */
     @Override
     public void shutdownEntity() {
+        if(mainStorage) return;
         for (Cache c : caches) {
             Log.cacheEnd(getId(), c.dataObjectID, c.length);
         }
