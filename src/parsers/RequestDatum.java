@@ -25,14 +25,14 @@ public abstract class RequestDatum {
 
     public RequestDatum(String str) {
         String[] s = str.split("\t");
-        reqTime=Long.parseLong(s[0]);
-        clientID=s[1];
-        serverID=s[2];
-        length=Integer.parseInt(s[3]);
+        reqTime = Long.parseLong(s[0]);
+        clientID = s[1];
+        serverID = s[2];
+        length = Integer.parseInt(s[3]);
+        //length = length == 0 ? 1 : (int) Math.log(length);
     }
-    
-    public RequestDatum(){
+
+    public RequestDatum() {
     }
-    
-    
+
 }

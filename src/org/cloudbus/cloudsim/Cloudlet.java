@@ -480,10 +480,10 @@ public class Cloudlet implements Comparable<Cloudlet> {
 
     @Override
     public int compareTo(Cloudlet o) {
-        if (execStartTime > o.getExecStartTime()) {
+        if (finishTime > o.getFinishTime()) {
             return 1;
         }
-        if (execStartTime < o.getExecStartTime()) {
+        if (finishTime < o.getFinishTime()) {
             return -1;
         }
         return 0;

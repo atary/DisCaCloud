@@ -30,13 +30,13 @@ public class LogParserTest {
         //    System.out.println(w);
         
         //Toplu halde oku juice.txt içine kendi formatıyla bas. juice.txt adı değişmemeli
-        //long minTime=Long.parseLong("893971817000");
+        long minTime=Long.parseLong("893971817000");
                 
-        //PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wcLogs/juice.txt"),false));
-        //pw.print("");
+        PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wcLogs/juice.txt"),false));
+        pw.print("");
         
-        //wcReader.dumpAll("wcLogs",pw,minTime);
-        //pw.close();
+        wcReader.dumpAll("C:\\recreate.out",pw,minTime);
+        pw.close();
         
         //juice.txt'den okuyup 6'lı 7'li bas
         //wcReader.open("wcLogs/juice.txt");

@@ -63,15 +63,16 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(900);
-            CloudSim.setAggression(1);
+            CloudSim.setCacheQuantum(200);
+            CloudSim.setAggression(0.011);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = false;
-            String requestFile = "wcLogs/juice.txt";
+            String requestFile = "wcLogs/juice880K.txt";
             RequestTextReaderInterface wsReader = new WCTextReader();
-            int numRecords = 1000;
+            int numRecords = 10000;
             int numRequests = 0;
+            int timeOffset = 1785;
 
             //ArrayList<String> labels = new ArrayList<>(Arrays.asList("GARR", "DFN", "CESNET", "PSNC", "FCCN", "GRNET", "HEANET", "I2CAT", "ICCS", "KTH", "NIIF", "PSNC-2", "RedIRIS", "SWITCH", "NORDUNET"));
             HashMap<Integer, String> labelMap = new HashMap<>();
@@ -137,7 +138,7 @@ public class DisCaCloud {
                     selectedDC = (Datacenter) randomValue;
                 }
                 DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
-                createLoad(mainDcId, selectedDC, selectedBR, (int) w.getReqTime(), Arrays.asList(w.getServerID().hashCode()));
+                createLoad(mainDcId, selectedDC, selectedBR, (int) w.getReqTime() - timeOffset, Arrays.asList(w.getServerID().hashCode()));
                 numRequests++;
                 int dataObjectId = w.getServerID().hashCode();
                 if (dataObjectIds.add(dataObjectId)) {
@@ -158,12 +159,11 @@ public class DisCaCloud {
             createLoad(mainDcId, dcList.get(7), brList.get(7), 190, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 220, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));*/
-            // Sixth step: Starts the simulation
             CloudSim.startSimulation();
 
             CloudSim.stopSimulation();
 
-            //Final step: Print results when simulation is over
+            //Log.enable();
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
                 newList.addAll(br.getCloudletReceivedList());
@@ -221,7 +221,7 @@ public class DisCaCloud {
         // 4. Create Host with its id and list of PEs and add them to the list
         // of machines
         int hostId = 0;
-        int ram = 100 * 1024; // host memory (MB)
+        int ram = 1000 * 1024; // host memory (MB)
         long storage = 100000000; // host storage
         int bw = 1000000;
 
@@ -335,7 +335,7 @@ public class DisCaCloud {
         Vm newVm = new Vm(vmid++, br.getId(), start, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
         br.addVm(newVm);
 
-        long length = 4000;
+        long length = 500;
         long fileSize = 300;
         long outputSize = 300;
         UtilizationModel utilizationModel = new UtilizationModelFull();

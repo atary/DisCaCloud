@@ -94,6 +94,9 @@ public class Datacenter extends SimEntity {
     public static void setLabelMap(HashMap<Integer, String> labelMap) {
         Datacenter.labelMap = labelMap;
     }
+    
+    private static int cloudletStarted = 0;
+    private static int cloudletFinished = 0;
 
     private boolean firstCheckScheduled;
 
@@ -216,6 +219,8 @@ public class Datacenter extends SimEntity {
 
             // New Cloudlet arrives
             case CloudSimTags.CLOUDLET_SUBMIT:
+                cloudletStarted++;
+                if(cloudletStarted%1000==0) System.out.println("Cloudlet "+cloudletStarted + " started");
                 processCloudletSubmit(ev, false);
                 break;
 
@@ -1239,6 +1244,8 @@ public class Datacenter extends SimEntity {
                     Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
                     if (cl != null) {
                         sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+                        cloudletFinished++;
+                        if(cloudletFinished%1000==0) System.out.println("Cloudlet "+cloudletFinished+ " finished at "+CloudSim.clock());
                     }
                 }
             }

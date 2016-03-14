@@ -69,8 +69,10 @@ public class WCTextReader implements RequestTextReaderInterface{
         Scanner s = new Scanner(file);
         WCDatum temp;
         String tempstr;
-
+        int count = 0;
         while (s.hasNext()) {
+            count++;
+            if(count%10000==0) System.out.println(count);
             temp = WCDatum.parseWCDatum(s.nextLine().trim());
             tempstr = "" + ((temp.getReqTime() - offset) / 1000) + "\t" + temp.getClientID() + "\t" + temp.getServerID() + "\t" + temp.getLength()+ "\n";
             pw.append(tempstr);

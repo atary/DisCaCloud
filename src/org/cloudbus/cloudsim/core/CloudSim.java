@@ -607,7 +607,7 @@ public class CloudSim {
                     break;
                 }
             }
-            if(allCache && CloudSim.clock()>1000){ //Same as else
+            if(allCache || CloudSim.clock()>100000){ //Same as else
                 running = false;
                 printMessage(CloudSim.clock() + " Simulation: No more future events (except cache operations)");
                 return true;
