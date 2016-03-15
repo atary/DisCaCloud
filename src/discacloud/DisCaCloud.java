@@ -63,14 +63,14 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(200);
-            CloudSim.setAggression(0.0);
+            CloudSim.setCacheQuantum(1000);
+            CloudSim.setAggression(0);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = false;
             String requestFile = "wcLogs/juice880K.txt";
             RequestTextReaderInterface wsReader = new WCTextReader();
-            int numRecords = 10000;
+            int numRecords = 100000;
             int numRequests = 0;
             int timeOffset = 1785;
 
@@ -112,6 +112,7 @@ public class DisCaCloud {
                 reader = new DatabaseReader.Builder(GeoDatabase).build();
             }
             wsReader.open(requestFile);
+            int storageSize = 0;
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
                 Datacenter selectedDC = null;
                 if (geoLocation) {
@@ -143,6 +144,7 @@ public class DisCaCloud {
                 int dataObjectId = w.getServerID().hashCode();
                 if (dataObjectIds.add(dataObjectId)) {
                     dcList.get(mainDcId).addDataToMainDC(dataObjectId, (w.getLength()));
+                    storageSize += w.getLength();
                 }
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
@@ -173,7 +175,7 @@ public class DisCaCloud {
                 Collections.sort(newList);
                 printCloudletList(newList);
             }
-
+            /*
             System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
             System.out.println("Finish Time: " + dft.format(newList.get(newList.size() - 1).getFinishTime()));
             System.out.println("Number of Requests: " + numRequests);
@@ -187,7 +189,27 @@ public class DisCaCloud {
             System.out.println("Total Cost: " + dft.format(Log.getTotalCost()));
             System.out.println("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
             System.out.println("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+            System.out.println("Main Storage Cost: " + dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
             System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
+             */
+
+            System.out.println("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+            System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime()));
+            System.out.println(numRequests);
+            System.out.println(newList.size());
+            System.out.println(dataObjectIds.size());
+            System.out.println();
+            System.out.println(Log.getDataReturnedFromMainDC());
+            System.out.println(Log.getDataReturnedFromCache());
+            System.out.println(Log.getDataFoundInLocalCache());
+            System.out.println(Log.getDataFoundInLocalMainDC());
+            System.out.println(Log.getDataNotFound());
+            System.out.println(dft.format(Log.getTotalCost()));
+            System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
+            System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+            System.out.println();
+            System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
+            System.out.println("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
 
         } catch (Exception e) {
             e.printStackTrace();
