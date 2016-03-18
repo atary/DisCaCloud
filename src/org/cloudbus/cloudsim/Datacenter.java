@@ -220,7 +220,7 @@ public class Datacenter extends SimEntity {
             // New Cloudlet arrives
             case CloudSimTags.CLOUDLET_SUBMIT:
                 cloudletStarted++;
-                if(cloudletStarted%1000==0) System.out.println("Cloudlet "+cloudletStarted + " started");
+                //if(cloudletStarted%1000==0) System.out.println("Cloudlet "+cloudletStarted + " started");
                 processCloudletSubmit(ev, false);
                 break;
 
@@ -1245,7 +1245,7 @@ public class Datacenter extends SimEntity {
                     if (cl != null) {
                         sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
                         cloudletFinished++;
-                        if(cloudletFinished%1000==0) System.out.println("Cloudlet "+cloudletFinished+ " finished at "+CloudSim.clock());
+                        if(cloudletFinished%10000==0) System.out.println("Cloudlet "+cloudletFinished+ " finished at "+CloudSim.clock());
                     }
                 }
             }

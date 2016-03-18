@@ -3,11 +3,17 @@ package discacloud;
 import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +57,17 @@ public class DisCaCloud {
     private static DecimalFormat dft = new DecimalFormat("###,#00.0");
 
     public static void main(String[] args) throws FileNotFoundException, UnknownHostException, IOException {
+
+        boolean batch = false;
+        String fileName = "";
+
+        if (args.length > 0) {
+            batch = true;
+            double ar = Double.parseDouble(args[1])*1000;
+            fileName = (int)ar + ".txt";
+            System.out.println(fileName);
+        }
+
         Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
@@ -63,14 +80,14 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(1000);
-            CloudSim.setAggression(0);
+            CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = false;
-            String requestFile = "wcLogs/juice880K.txt";
+            String requestFile = batch ? "wcLogs/juice880K.txt" : "wcLogs/juice880K.txt";
             RequestTextReaderInterface wsReader = new WCTextReader();
-            int numRecords = 100000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
             int numRequests = 0;
             int timeOffset = 1785;
 
@@ -161,10 +178,11 @@ public class DisCaCloud {
             createLoad(mainDcId, dcList.get(7), brList.get(7), 190, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 220, Arrays.asList(1));
             createLoad(mainDcId, dcList.get(7), brList.get(7), 290, Arrays.asList(1));*/
+            
+            
             CloudSim.startSimulation();
-
             CloudSim.stopSimulation();
-
+            
             //Log.enable();
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
@@ -193,24 +211,55 @@ public class DisCaCloud {
             System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
              */
 
-            System.out.println("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
-            System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime()));
-            System.out.println(numRequests);
-            System.out.println(newList.size());
-            System.out.println(dataObjectIds.size());
-            System.out.println();
-            System.out.println(Log.getDataReturnedFromMainDC());
-            System.out.println(Log.getDataReturnedFromCache());
-            System.out.println(Log.getDataFoundInLocalCache());
-            System.out.println(Log.getDataFoundInLocalMainDC());
-            System.out.println(Log.getDataNotFound());
-            System.out.println(dft.format(Log.getTotalCost()));
-            System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
-            System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
-            System.out.println();
-            System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
-            System.out.println("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
+            if (batch) {
+                String text = ("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime()));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + numRequests;
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + newList.size();
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dataObjectIds.size());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (Log.getDataReturnedFromMainDC());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (Log.getDataReturnedFromCache());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (Log.getDataFoundInLocalCache());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (Log.getDataFoundInLocalMainDC());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (Log.getDataNotFound());
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(Log.getTotalCost()));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + ("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]") + "\n----\n";
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+            } else {
+                System.out.println("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+                System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime()));
+                System.out.println(numRequests);
+                System.out.println(newList.size());
+                System.out.println(dataObjectIds.size());
+                System.out.println(Log.getDataReturnedFromMainDC());
+                System.out.println(Log.getDataReturnedFromCache());
+                System.out.println(Log.getDataFoundInLocalCache());
+                System.out.println(Log.getDataFoundInLocalMainDC());
+                System.out.println(Log.getDataNotFound());
+                System.out.println(dft.format(Log.getTotalCost()));
+                System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
+                System.out.println(dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
+                System.out.println(dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
+                System.out.println("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
 
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");
