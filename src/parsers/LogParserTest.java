@@ -23,20 +23,20 @@ public class LogParserTest {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, FileNotFoundException, ParseException {
-        WCTextReader wcReader = new WCTextReader();
+        //WCTextReader wcReader = new WCTextReader();
         
         //Toplu halde oku ekrana bas
         //for(WCDatum w:wcReader.read("wcLogs"))
         //    System.out.println(w);
         
         //Toplu halde oku juice.txt içine kendi formatıyla bas. juice.txt adı değişmemeli
-        long minTime=Long.parseLong("893971817000");
+        //long minTime=Long.parseLong("893971817000");
                 
-        PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wcLogs/juice.txt"),false));
-        pw.print("");
+        //PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wcLogs/juice.txt"),false));
+        //pw.print("");
         
-        wcReader.dumpAll("C:\\recreate.out",pw,minTime);
-        pw.close();
+        //wcReader.dumpAll("C:\\recreate.out",pw,minTime);
+        //pw.close();
         
         //juice.txt'den okuyup 6'lı 7'li bas
         //wcReader.open("wcLogs/juice.txt");
@@ -50,11 +50,11 @@ public class LogParserTest {
         //    System.out.println(w);
                 
         //Toplu halde oku juice.txt içine kendi formatıyla bas. juice.txt adı değişmemeli       
-        //PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wSharkLogs/juice.txt"),false));
-        //pw.print("");
+        PrintWriter pw=new PrintWriter(new FileOutputStream(new File("wSharkLogs/juice.txt"),false));
+        pw.print("");
         
-        //wsReader.dumpAll("wSharkLogs",pw);
-        //pw.close();
+        wsReader.dumpAll("wSharkLogs",pw);
+        pw.close();
                 
         //juice.txt'den okuyup 6'lı 7'li bas
         //wsReader.open("wSharkLogs/juice.txt");
