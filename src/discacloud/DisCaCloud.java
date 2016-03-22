@@ -59,7 +59,8 @@ public class DisCaCloud {
 
         if (args.length > 0) {
             batch = true;
-            fileName = args[2] + ".txt";
+            int val = (int)(Double.parseDouble(args[1])*1000);
+            fileName = val + ".txt";
             System.out.println(fileName);
         }
 
