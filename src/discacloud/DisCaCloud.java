@@ -66,6 +66,8 @@ public class DisCaCloud {
         Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
+        
+        int[] dcLoads = new int[102];
 
         try {
             int num_user = 100;
@@ -82,10 +84,10 @@ public class DisCaCloud {
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 1000000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
             int numRequests = 0;
             int timeOffset = 0;
-            double timeDiv = 100;
+            double timeDiv = 10;
 
             HashMap<Integer, String> labelMap = new HashMap<>();
             NetworkTopology.buildNetworkTopology("C:\\atakan.brite");
@@ -137,8 +139,12 @@ public class DisCaCloud {
 
                     double x = (lat + 90) * planeSize / 180;
                     double y = (lon + 180) * planeSize / 360;
-
+                    x-=258;
+                    x*=(1000.0/603.0);
+                    y-=57;
+                    y*=(1000.0/928.0);
                     selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
+                    dcLoads[selectedDC.getId()]++;
                 } else {
                     Object[] values = dcList.values().toArray();
                     Object randomValue = values[Math.abs(w.getClientID().hashCode()) % values.length];
@@ -154,7 +160,9 @@ public class DisCaCloud {
                 }
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
-
+            
+            System.out.println(Arrays.toString(dcLoads));
+            
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
 

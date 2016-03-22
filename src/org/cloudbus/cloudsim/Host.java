@@ -204,14 +204,14 @@ public class Host {
 		if (getStorage() < vm.getSize()) {
 			Log.printLine("[VmScheduler.vmCreate] Allocation of VM #" + vm.getId() + " to Host #" + getId()
 					+ " failed by storage");
-                        System.out.println("storage");
+                        System.out.println("storage " + datacenter.getId());
 			return false;
 		}
 
 		if (!getRamProvisioner().allocateRamForVm(vm, vm.getCurrentRequestedRam())) {
 			Log.printLine("[VmScheduler.vmCreate] Allocation of VM #" + vm.getId() + " to Host #" + getId()
 					+ " failed by RAM");
-                        System.out.println("Ram");
+                        System.out.println("Ram " + datacenter.getId());
 			return false;
 		}
 
@@ -219,7 +219,7 @@ public class Host {
 			Log.printLine("[VmScheduler.vmCreate] Allocation of VM #" + vm.getId() + " to Host #" + getId()
 					+ " failed by BW");
 			getRamProvisioner().deallocateRamForVm(vm);
-                        System.out.println("bw");
+                        System.out.println("bw " + datacenter.getId());
 			return false;
 		}
 
@@ -228,7 +228,7 @@ public class Host {
 					+ " failed by MIPS");
 			getRamProvisioner().deallocateRamForVm(vm);
 			getBwProvisioner().deallocateBwForVm(vm);
-                        System.out.println("mips");
+                        System.out.println("mips " + datacenter.getId());
 			return false;
 		}
 
