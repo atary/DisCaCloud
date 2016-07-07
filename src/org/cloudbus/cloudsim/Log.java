@@ -9,7 +9,9 @@ package org.cloudbus.cloudsim;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.PrintFile;
 
@@ -27,38 +29,38 @@ public class Log {
      * The Constant LINE_SEPARATOR.
      */
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    
+
     private static int fromCache = 0;
     private static int fromMain = 0;
     private static int fromLocal = 0;
     private static int fromLocalMain = 0;
     private static int fail = 0;
-    
-    public static void dataReturnedFromCache(){
+
+    public static void dataReturnedFromCache() {
         fromCache++;
     }
-    
-    public static void dataReturnedFromMainDC(){
+
+    public static void dataReturnedFromMainDC() {
         fromMain++;
     }
-    
-    public static void dataFoundInLocalCache(){
+
+    public static void dataFoundInLocalCache() {
         fromLocal++;
     }
-    
-    public static void dataFoundInLocalMainDC(){
+
+    public static void dataFoundInLocalMainDC() {
         fromLocalMain++;
     }
-    
-    public static void dataNotFound(){
+
+    public static void dataNotFound() {
         fail++;
     }
-    
-    public static int getDataFoundInLocalCache(){
+
+    public static int getDataFoundInLocalCache() {
         return fromLocal;
     }
-    
-    public static int getDataFoundInLocalMainDC(){
+
+    public static int getDataFoundInLocalMainDC() {
         return fromLocalMain;
     }
 
@@ -73,26 +75,56 @@ public class Log {
     public static int getDataNotFound() {
         return fail;
     }
-    
+
     private static int creation = 0;
     private static int removal = 0;
     private static int migration = 0;
     private static int duplication = 0;
-    
-    public static void creation(){
+
+    private static double intervalDuration;
+    private static int maxInterval = 0;
+
+    //ATAKAN: <intervalNo, count>
+    private static final HashMap<Integer, Integer> creations = new HashMap<>();
+    private static final HashMap<Integer, Integer> removals = new HashMap<>();
+    private static final HashMap<Integer, Integer> migrations = new HashMap<>();
+    private static final HashMap<Integer, Integer> duplications = new HashMap<>();
+
+    public static void setIntervalDuration(double intervalDuration) {
+        Log.intervalDuration = intervalDuration;
+    }
+
+    public static void intervalCount(HashMap<Integer, Integer> hm) {
+        int intervalNo = (int) Math.floor(CloudSim.clock() / intervalDuration);
+        int val = hm.containsKey(intervalNo) ? hm.get(intervalNo) : 0;
+        hm.put(intervalNo, val + 1);
+        maxInterval = intervalNo;
+    }
+
+    public static void creation() {
+        intervalCount(creations);
         creation++;
     }
-    
-    public static void removal(){
+
+    public static void removal() {
+        intervalCount(removals);
         removal++;
     }
-    
-    public static void migration(){
+
+    public static void migration() {
+        intervalCount(migrations);
         migration++;
     }
-    
-    public static void duplication(){
+
+    public static void duplication() {
+        intervalCount(duplications);
         duplication++;
+    }
+
+    public static void printIntervals() {
+        for (int i=0; i<=maxInterval; i++) {
+            System.out.println(i + " " + creations.get(i) + " " + removals.get(i) + " " + migrations.get(i) + " " + duplications.get(i));
+        }
     }
 
     public static int getCreation() {
@@ -302,13 +334,13 @@ public class Log {
     public static double getStorageCost() {
         return storageCost;
     }
-    
-    public static void addBandwidthCost(int sourceID, int destinationID, int length){
+
+    public static void addBandwidthCost(int sourceID, int destinationID, int length) {
         double unitCost = CloudSim.bandwidthCosts.get(sourceID);
         double hopCount = NetworkTopology.getHopCount(sourceID, destinationID);
         bandwidthCost += unitCost * length * hopCount;
     }
-    
+
     public static double getBandwidthCost() {
         return bandwidthCost;
     }

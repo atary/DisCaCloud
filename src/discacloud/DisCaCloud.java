@@ -78,13 +78,14 @@ public class DisCaCloud {
 
             //CONFIGURATION
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
+            Log.setIntervalDuration(CloudSim.getCacheQuantum());
             CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 1);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 50000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
@@ -162,10 +163,10 @@ public class DisCaCloud {
             }
             
             //System.out.println(Arrays.toString(dcLoads));
-            
+
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
-
+            
             //Log.enable();
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
@@ -211,6 +212,7 @@ public class DisCaCloud {
                 text = "\n" + ("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]") + "\n----\n";
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
             } else {
+                Log.printIntervals();
                 System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
                 System.out.println("Finish Time: " + dft.format(newList.get(newList.size() - 1).getFinishTime()));
                 System.out.println("Number of Requests: " + numRequests);
@@ -303,8 +305,8 @@ public class DisCaCloud {
             e.printStackTrace();
         }
 
-        CloudSim.storageCosts.put(datacenter.getId(), 0.01);
-        CloudSim.bandwidthCosts.put(datacenter.getId(), 0.01);
+        CloudSim.storageCosts.put(datacenter.getId(), 0.03);  //Amazon S3 per GB
+        CloudSim.bandwidthCosts.put(datacenter.getId(), 0.09); //Amazon S3 per GB
 
         return datacenter;
     }
