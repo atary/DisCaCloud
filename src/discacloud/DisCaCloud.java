@@ -58,7 +58,7 @@ public class DisCaCloud {
 
         if (args.length > 0) {
             batch = true;
-            int val = (int)(Double.parseDouble(args[1])*1000);
+            int val = (int) (Double.parseDouble(args[1]) * 1000);
             fileName = val + ".txt";
             System.out.println(fileName);
         }
@@ -66,7 +66,7 @@ public class DisCaCloud {
         Log.disable();
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
-        
+
         int[] dcLoads = new int[102];
 
         try {
@@ -85,7 +85,7 @@ public class DisCaCloud {
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 50000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 1000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
@@ -140,10 +140,10 @@ public class DisCaCloud {
 
                     double x = (lat + 90) * planeSize / 180;
                     double y = (lon + 180) * planeSize / 360;
-                    x-=258;
-                    x*=(1000.0/603.0);
-                    y-=57;
-                    y*=(1000.0/928.0);
+                    x -= 258;
+                    x *= (1000.0 / 603.0);
+                    y -= 57;
+                    y *= (1000.0 / 928.0);
                     selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
                     dcLoads[selectedDC.getId()]++;
                 } else {
@@ -161,12 +161,11 @@ public class DisCaCloud {
                 }
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
-            
-            //System.out.println(Arrays.toString(dcLoads));
 
+            //System.out.println(Arrays.toString(dcLoads));
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
-            
+
             //Log.enable();
             List<Cloudlet> newList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
