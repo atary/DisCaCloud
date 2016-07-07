@@ -59,7 +59,8 @@ public class CloudSim {
     }
     
     //ATAKAN: Could be converted to messaging but it would make no difference in terms of performance as long as costs are static.
-    public static HashMap<Integer, Double> DcCosts = new HashMap<>();
+    public static HashMap<Integer, Double> storageCosts = new HashMap<>();
+    public static HashMap<Integer, Double> bandwidthCosts = new HashMap<>();
 
     /**
      * The Constant CLOUDSIM_VERSION_STRING.

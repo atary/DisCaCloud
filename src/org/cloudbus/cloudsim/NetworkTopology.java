@@ -243,6 +243,20 @@ public class NetworkTopology {
         }
         return 0.0;
     }
+    
+    public static double getHopCount(int srcID, int destID) {
+        if (networkEnabled) {
+            try {
+                // add the network latency
+                double delay = delayMatrix.getHopCount(map.get(srcID), map.get(destID));
+
+                return delay;
+            } catch (Exception e) {
+                // in case of error, just keep running and return 0.0
+            }
+        }
+        return 0.0;
+    }
 
     public static double getDcCentrality(int srcID) {
         return delayMatrix.getCentrality(map.get(srcID));
@@ -278,7 +292,7 @@ public class NetworkTopology {
         for (int i = 0; i < bwMatrix.length; i++) {
             if (bwMatrix[i][map.get(destinationId)] > 0) {
                 int id = inverseMap(i);
-                if (id > 0 && CloudSim.DcCosts.containsKey(id)) {
+                if (id > 0 && CloudSim.storageCosts.containsKey(id)) {
                     IDs.add(id);
                 }
             }

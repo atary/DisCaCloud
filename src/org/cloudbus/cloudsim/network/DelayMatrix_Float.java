@@ -22,6 +22,7 @@ public class DelayMatrix_Float {
      * matrix holding delay information between any two nodes
      */
     protected float[][] mDelayMatrix = null;
+    protected float[][] mHopCountMatrix = null;
 
     /**
      * number of nodes in the distance-aware-topology
@@ -51,6 +52,7 @@ public class DelayMatrix_Float {
 
         // lets preinitialize the Delay-Matrix
         createDelayMatrix(graph, directed);
+        createHopCountMatrix(graph, directed);
 
         // now its time to calculate all possible connection-delays
         calculateShortestPath();
@@ -68,6 +70,15 @@ public class DelayMatrix_Float {
         }
 
         return mDelayMatrix[srcID][destID];
+    }
+    
+    public float getHopCount(int srcID, int destID) {
+        // check the nodeIDs against internal array-boundarys
+        if (srcID > mTotalNodeNum || destID > mTotalNodeNum) {
+            throw new ArrayIndexOutOfBoundsException("srcID or destID is higher than highest stored node-ID!");
+        }
+
+        return mHopCountMatrix[srcID][destID];
     }
 
     // ATAKAN: returns the id of the neighbour of the destination over which the source message arrives
@@ -116,6 +127,37 @@ public class DelayMatrix_Float {
 
         }
     }
+    
+    //ATAKAN: same as above only with unit distances
+    private void createHopCountMatrix(TopologicalGraph graph, boolean directed) {
+
+        // number of nodes inside the network
+        mTotalNodeNum = graph.getNumberOfNodes();
+
+        mHopCountMatrix = new float[mTotalNodeNum][mTotalNodeNum];
+
+        // cleanup the complete distance-matrix with "0"s
+        for (int row = 0; row < mTotalNodeNum; ++row) {
+            for (int col = 0; col < mTotalNodeNum; ++col) {
+                mHopCountMatrix[row][col] = Float.MAX_VALUE;
+            }
+        }
+
+        Iterator<TopologicalLink> itr = graph.getLinkIterator();
+
+        TopologicalLink edge;
+        while (itr.hasNext()) {
+            edge = itr.next();
+
+            mHopCountMatrix[edge.getSrcNodeID()][edge.getDestNodeID()] = 1;
+
+            if (!directed) {
+                // according to aproximity of symmetry to all kommunication-paths
+                mHopCountMatrix[edge.getDestNodeID()][edge.getSrcNodeID()] = 1;
+            }
+
+        }
+    }
 
     /**
      * just calculates all pairs shortest paths
@@ -125,6 +167,7 @@ public class DelayMatrix_Float {
 
         floyd.initialize(mTotalNodeNum);
         mDelayMatrix = floyd.allPairsShortestPaths(mDelayMatrix);
+        mHopCountMatrix = floyd.allPairsShortestPaths(mHopCountMatrix);
         predecessorsMatrix = floyd.getPK();
     }
 

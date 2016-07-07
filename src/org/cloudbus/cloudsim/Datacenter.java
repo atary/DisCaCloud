@@ -914,6 +914,7 @@ public class Datacenter extends SimEntity {
         }
         if (found) {
             Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock() - ev.creationTime());
+            Log.addBandwidthCost(getId(), data[0], length);
             send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
             requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], length));
             if (mainStorage) {
@@ -977,7 +978,7 @@ public class Datacenter extends SimEntity {
             if (mainStorage) {
                 for (Cache c : caches) {
                     for (int n : neighbours) {
-                        double neighbourCost = CloudSim.DcCosts.get(n);
+                        double neighbourCost = CloudSim.storageCosts.get(n);
                         if (getDemand(c.dataObjectID, n, 0) > neighbourCost) { //Create Decision
                             send(n, c.length / NetworkTopology.getBw(), CloudSimTags.CREATE_CACHE, c);
                             Log.printLine(CloudSim.clock() + ": +" + getName() + ": Create a new cache for data object #" + c.getDataObjectID() + " in " + labelMap.get(n));
@@ -988,10 +989,10 @@ public class Datacenter extends SimEntity {
             } else {
                 for (Cache c : caches) {
                     //boolean actionTaken = false;
-                    double localCost = CloudSim.DcCosts.get(getId());
+                    double localCost = CloudSim.storageCosts.get(getId());
                     double allNeighboursDemand = 0;
                     for (int n : neighbours) {
-                        double neighbourCost = CloudSim.DcCosts.get(n);
+                        double neighbourCost = CloudSim.storageCosts.get(n);
 
                         double neighbourLatency = NetworkTopology.getDelay(getId(), n);
                         double neighbourDemand = getDemand(c.dataObjectID, n, 0);

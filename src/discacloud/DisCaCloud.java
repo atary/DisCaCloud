@@ -1,7 +1,6 @@
 package discacloud;
 
 import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -162,7 +161,7 @@ public class DisCaCloud {
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
             
-            System.out.println(Arrays.toString(dcLoads));
+            //System.out.println(Arrays.toString(dcLoads));
             
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
@@ -199,13 +198,15 @@ public class DisCaCloud {
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (Log.getDataNotFound());
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
-                text = "\n" + (dft.format(Log.getTotalCost()));
+                text = "\n" + (dft.format(Log.getStorageCost()));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
-                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
+                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
+                Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
+                text = "\n" + (dft.format(Log.getBandwidthCost()));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + ("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]") + "\n----\n";
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
@@ -220,10 +221,11 @@ public class DisCaCloud {
                 System.out.println("Number of Data Objects Found in Local Cache: " + Log.getDataFoundInLocalCache());
                 System.out.println("Number of Data Objects Found in Local Main DC: " + Log.getDataFoundInLocalMainDC());
                 System.out.println("Number of Data Objects Not Found Initially: " + Log.getDataNotFound());
-                System.out.println("Total Cost: " + dft.format(Log.getTotalCost()));
+                System.out.println("Storage Cost: " + dft.format(Log.getStorageCost()));
                 System.out.println("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
                 System.out.println("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
-                System.out.println("Main Storage Cost: " + dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * 0.01));
+                System.out.println("Main Storage Cost: " + dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
+                System.out.println("Bandwidth Cost: " + dft.format(Log.getBandwidthCost()));
                 System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
             }
         } catch (Exception e) {
@@ -301,7 +303,8 @@ public class DisCaCloud {
             e.printStackTrace();
         }
 
-        CloudSim.DcCosts.put(datacenter.getId(), 0.01);
+        CloudSim.storageCosts.put(datacenter.getId(), 0.01);
+        CloudSim.bandwidthCosts.put(datacenter.getId(), 0.01);
 
         return datacenter;
     }

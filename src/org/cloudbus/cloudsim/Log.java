@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.PrintFile;
 
 /**
@@ -125,7 +124,8 @@ public class Log {
 
     //ATAKAN: <Cache ID (DC + DataObject), time>
     private static final HashMap<String, Double> caches = new HashMap<>();
-    private static double totalCost = 0.0;
+    private static double storageCost = 0.0;
+    private static double bandwidthCost = 0.0;
 
     //ATAKAN: <Message Tag, latencies>
     private static final HashMap<Integer, Double> latencies = new HashMap<>();
@@ -288,19 +288,29 @@ public class Log {
     }
 
     public static void cacheEnd(int DcId, int dataObjectID, int length) {
-        double unitCost = CloudSim.DcCosts.get(DcId);
+        double unitCost = CloudSim.storageCosts.get(DcId);
         String cacheId = DcId + "-" + dataObjectID;
         if (caches.containsKey(cacheId)) {
             double start = caches.remove(cacheId);
             double duration = CloudSim.clock() - start;
-            totalCost += unitCost * length * duration;
+            storageCost += unitCost * length * duration;
         } else {
             throw new IllegalArgumentException();
         }
     }
 
-    public static double getTotalCost() {
-        return totalCost;
+    public static double getStorageCost() {
+        return storageCost;
+    }
+    
+    public static void addBandwidthCost(int sourceID, int destinationID, int length){
+        double unitCost = CloudSim.bandwidthCosts.get(sourceID);
+        double hopCount = NetworkTopology.getHopCount(sourceID, destinationID);
+        bandwidthCost += unitCost * length * hopCount;
+    }
+    
+    public static double getBandwidthCost() {
+        return bandwidthCost;
     }
 
     //ATAKAN: Log latency
