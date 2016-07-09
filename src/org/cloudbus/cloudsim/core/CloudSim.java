@@ -58,6 +58,23 @@ public class CloudSim {
         return cacheQuantum;
     }
     
+    //ATAKAN: If baseline method cache is enabled. Note that aggression should be set to 0.
+    private static boolean cacheEnabled = false;
+    private static int cacheLength;
+
+    public static boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+
+    public static void enableCache(int length) {
+        cacheEnabled = true;
+        cacheLength = length;
+    }
+    
+    public static int getCacheLength(){
+        return cacheLength;
+    }
+    
     //ATAKAN: Could be converted to messaging but it would make no difference in terms of performance as long as costs are static.
     public static HashMap<Integer, Double> storageCosts = new HashMap<>();
     public static HashMap<Integer, Double> bandwidthCosts = new HashMap<>();

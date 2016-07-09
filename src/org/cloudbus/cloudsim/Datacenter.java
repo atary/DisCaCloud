@@ -83,6 +83,9 @@ public class Datacenter extends SimEntity {
     //ATAKAN: <DataObjectID> Stores the caches (DataObjectID) that are kept in this datacenter.
     private HashSet<Cache> caches;
 
+    //ATAKAN: <DataObjectID, CloudSimClock> Last usage times of caches for LRU.
+    private HashMap<Integer, Double> lru;
+
     //ATAKAN: <DatacenterID, Latency> latencies to the known non-neigbour datacenters.
     private HashMap<Integer, Double> knownDistances;
 
@@ -94,7 +97,7 @@ public class Datacenter extends SimEntity {
     public static void setLabelMap(HashMap<Integer, String> labelMap) {
         Datacenter.labelMap = labelMap;
     }
-    
+
     private static int cloudletStarted = 0;
     private static int cloudletFinished = 0;
 
@@ -153,6 +156,7 @@ public class Datacenter extends SimEntity {
 
         cacheLocations = new HashSetValuedHashMap<>();
         caches = new HashSet<>();
+        lru = new HashMap<>();
         knownDistances = new HashMap<>();
         requests = new HashSet<>();
         mainStorage = false;
@@ -188,7 +192,7 @@ public class Datacenter extends SimEntity {
                 srcId = ((Integer) ev.getData()).intValue();
                 sendNow(srcId, ev.getTag(), getCharacteristics());
                 // ATAKAN: Schedule the first cache check
-                if (!firstCheckScheduled) {
+                if (!firstCheckScheduled && !CloudSim.isCacheEnabled()) {
                     firstCheckScheduled = true;
                     Log.printLine(CloudSim.clock() + ": " + getName() + ": CHECK_DEMAND_FOR_CACHES is scheduled");
                     send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
@@ -913,9 +917,14 @@ public class Datacenter extends SimEntity {
             }
         }
         if (found) {
+            int[] updatedData = new int[data.length + 1];
+            for (int i = 0; i < data.length; i++) {
+                updatedData[i] = data[i];
+            }
+            updatedData[updatedData.length - 1] = length;
             Log.addLatency(CloudSimTags.REMOTE_DATA_RETURN, CloudSim.clock() - ev.creationTime());
             Log.addBandwidthCost(getId(), data[0], length);
-            send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, data);
+            send(data[0], length / NetworkTopology.getBw(), CloudSimTags.REMOTE_DATA_RETURN, updatedData);
             requests.add(new Request(ev.creationTime(), data[0], getId(), data[4], length));
             if (mainStorage) {
                 Log.dataReturnedFromMainDC();
@@ -924,7 +933,7 @@ public class Datacenter extends SimEntity {
             }
         } else {
             Log.addLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND, CloudSim.clock() - ev.creationTime());
-            Log.dataNotFound();;
+            Log.dataNotFound();
             sendNow(data[0], CloudSimTags.REMOTE_DATA_NOT_FOUND, data);
         }
     }
@@ -942,6 +951,36 @@ public class Datacenter extends SimEntity {
         }
         Log.printLine(CloudSim.clock() + ": " + getName() + ": Data object #" + data[4] + " is received from " + labelMap.get(ev.getSource()));
 
+        if (CloudSim.isCacheEnabled()) {
+            int id = data[4];
+            int length = data[5];
+            if (caches.add(new Cache(id, length))) {
+                Log.cacheStart(getId(), id);
+                Log.creation();
+            }
+            lru.put(id, CloudSim.clock());
+            while (caches.size() > CloudSim.getCacheLength()) {
+                double lruTime = Double.MAX_VALUE;
+                Cache lruCache = null;
+                for (Cache c : caches) {
+                    double time = lru.get(c.getDataObjectID());
+                    if (time < lruTime) {
+                        lruTime = time;
+                        lruCache = c;
+                    }
+                }
+                if (null == lruCache) {
+                    throw new RuntimeException("LRU cache is not found");
+                } else if (caches.remove(lruCache)) {
+                    Log.cacheEnd(getId(), lruCache.getDataObjectID(), length);
+                    Log.removal();
+                    lru.remove(lruCache.getDataObjectID());
+                }
+                else{
+                    throw new RuntimeException("LRU cache is already removed");
+                }
+            }
+        }
     }
 
     private void processDataNotFound(SimEvent ev) {
@@ -1246,7 +1285,9 @@ public class Datacenter extends SimEntity {
                     if (cl != null) {
                         sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
                         cloudletFinished++;
-                        if(cloudletFinished%10000==0) System.out.println("Cloudlet "+cloudletFinished+ " finished at "+CloudSim.clock());
+                        if (cloudletFinished % 10000 == 0) {
+                            System.out.println("Cloudlet " + cloudletFinished + " finished at " + CloudSim.clock());
+                        }
                     }
                 }
             }
@@ -1357,7 +1398,9 @@ public class Datacenter extends SimEntity {
      */
     @Override
     public void shutdownEntity() {
-        if(mainStorage) return;
+        if (mainStorage) {
+            return;
+        }
         for (Cache c : caches) {
             Log.cacheEnd(getId(), c.dataObjectID, c.length);
         }

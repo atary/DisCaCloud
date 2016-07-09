@@ -79,13 +79,14 @@ public class DisCaCloud {
             //CONFIGURATION
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
-            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 1);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
+            CloudSim.enableCache(10);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 1000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
