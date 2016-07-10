@@ -79,7 +79,7 @@ public class DisCaCloud {
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
             CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
-            CloudSim.enableCache(100);
+            //CloudSim.enableCache(1000);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;

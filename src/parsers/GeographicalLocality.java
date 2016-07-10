@@ -7,6 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 /**
@@ -45,12 +49,20 @@ public class GeographicalLocality {
                 } catch (Exception ex) {
                 }
             }
-            
+            Path p = Paths.get("C:\\distances.txt");
+            int count = (locations.size() * (locations.size() - 1)) / 2;
+            int k = 0;
+            System.out.println(count);
+            int prev = 0;
             for (int i = 0; i < locations.size(); i++) {
                 Location l1 = locations.get(i);
                 double lat1 = l1.getLatitude();
                 double lon1 = l1.getLongitude();
                 for (int j = i + 1; j < locations.size(); j++) {
+                    k++;
+                    if(k*100/count > prev){
+                        System.out.println(++prev + "%");
+                    }
                     totalCount++;
                     Location l2 = locations.get(j);
                     double lat2 = l2.getLatitude();
@@ -61,11 +73,13 @@ public class GeographicalLocality {
                     } else if (distance < distanceThreshold) {
                         closeCount++;
                     }
-                    System.out.println(distance);
+                    //System.out.println(distance);
+                    String text = distance + "\n";
+                    Files.write(p, text.getBytes(), StandardOpenOption.APPEND);
                 }
             }
-            System.out.println(distanceThreshold + ": " + closeCount + "/" + totalCount + " (" + (closeCount * 100 / totalCount) + ")");
-            System.out.println(distanceThreshold + ": " + sameCount + "/" + totalCount + " (" + (sameCount * 100 / totalCount) + ")");
+            //System.out.println(distanceThreshold + ": " + closeCount + "/" + totalCount + " (" + (closeCount * 100 / totalCount) + ")");
+            //System.out.println(distanceThreshold + ": " + sameCount + "/" + totalCount + " (" + (sameCount * 100 / totalCount) + ")");
         }
     }
 
