@@ -67,12 +67,11 @@ public class DisCaCloud {
         Log.disableFile();
         Log.printLine("Starting DisCaCloud...");
 
-        int[] dcLoads = new int[102];
-
         try {
-            int num_user = 100;
+            int num_user = 1000;
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false;
+            int[] dcLoads = new int[num_user+2];
 
             CloudSim.init(num_user, calendar, trace_flag);
 
@@ -80,30 +79,30 @@ public class DisCaCloud {
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
             CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
-            CloudSim.enableCache(10);
+            CloudSim.enableCache(1000);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 1000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
 
             HashMap<Integer, String> labelMap = new HashMap<>();
-            NetworkTopology.buildNetworkTopology("C:\\atakan.brite");
+            NetworkTopology.buildNetworkTopology("C:\\topology1000.brite");
 
             HashMap<Integer, Datacenter> dcList = new HashMap<>();
             HashMap<Integer, DatacenterBroker> brList = new HashMap<>();
             HashSet<Integer> dataObjectIds = new HashSet<>();
 
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < num_user; i++) {
                 Datacenter dc = createDatacenter("DC_" + i); //labels.get(i)
                 dcList.put(dc.getId(), dc);
                 NetworkTopology.mapNode(dc.getId(), i);
             }
-
+            System.out.println("DCs created...");
             for (Datacenter dc : dcList.values()) {
                 labelMap.put(dc.getId(), dc.getName());
                 String name = dc.getName() + "_BROKER";
@@ -113,6 +112,9 @@ public class DisCaCloud {
                 brList.put(br.getId(), br);
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
+            NetworkTopology.generateMatrices();
+            
+            System.out.println("Links added...");
             Datacenter.setLabelMap(labelMap);
             mainDcId = NetworkTopology.getMostCentralDc();
 
@@ -124,6 +126,7 @@ public class DisCaCloud {
             }
             wsReader.open(requestFile);
             int storageSize = 0;
+            System.out.println("Geolocation starts here...");
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
                 Datacenter selectedDC = null;
                 if (geoLocation) {
@@ -141,10 +144,15 @@ public class DisCaCloud {
 
                     double x = (lat + 90) * planeSize / 180;
                     double y = (lon + 180) * planeSize / 360;
-                    x -= 258;
-                    x *= (1000.0 / 603.0);
-                    y -= 57;
-                    y *= (1000.0 / 928.0);
+                    x -= 600;
+                    x = x < 0 ? 0 : x;
+                    x *= 4.5;
+                    x = x > 1000 ? 1000 : x;
+                    y -= 140;
+                    y = y < 0 ? 0 : y;
+                    y *= 1.4;
+                    y = y > 1000 ? 1000 : y;
+                    System.out.println(x + "\t" + y);
                     selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
                     dcLoads[selectedDC.getId()]++;
                 } else {
@@ -163,7 +171,10 @@ public class DisCaCloud {
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
 
-            //System.out.println(Arrays.toString(dcLoads));
+            System.out.println(Arrays.toString(dcLoads));
+            if (true) {
+                return;
+            }
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
 

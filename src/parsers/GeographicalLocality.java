@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package parsers;
 
 import com.maxmind.geoip2.DatabaseReader;
@@ -21,7 +16,7 @@ import java.util.ArrayList;
 public class GeographicalLocality {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        int numRecords = 100;
+        int numRecords = 1000;
         //double distanceThreshold = 100;
 
         for (double distanceThreshold = 100; distanceThreshold <= 100; distanceThreshold += 100) {
@@ -46,10 +41,11 @@ public class GeographicalLocality {
                 try {
                     clientCity = reader.city(clientIP);
                     locations.add(clientCity.getLocation());
+                    //System.out.println(clientCity.getLocation().getLatitude() + "\t" + clientCity.getLocation().getLongitude());
                 } catch (Exception ex) {
                 }
             }
-
+            
             for (int i = 0; i < locations.size(); i++) {
                 Location l1 = locations.get(i);
                 double lat1 = l1.getLatitude();
@@ -68,8 +64,8 @@ public class GeographicalLocality {
                     System.out.println(distance);
                 }
             }
-            //System.out.println(distanceThreshold + ": " + closeCount + "/" + totalCount + " (" + (closeCount * 100 / totalCount) + ")");
-            //System.out.println(distanceThreshold + ": " + sameCount + "/" + totalCount + " (" + (sameCount * 100 / totalCount) + ")");
+            System.out.println(distanceThreshold + ": " + closeCount + "/" + totalCount + " (" + (closeCount * 100 / totalCount) + ")");
+            System.out.println(distanceThreshold + ": " + sameCount + "/" + totalCount + " (" + (sameCount * 100 / totalCount) + ")");
         }
     }
 

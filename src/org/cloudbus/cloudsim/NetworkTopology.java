@@ -87,7 +87,7 @@ public class NetworkTopology {
      * Generates the matrices used internally to set latency and bandwidth
      * between elements
      */
-    private static void generateMatrices() {
+    public static void generateMatrices() {
         // creates the delay matrix
         delayMatrix = new DelayMatrix_Float(graph, false);
 
@@ -134,7 +134,7 @@ public class NetworkTopology {
         // generate a new link
         graph.addLink(new TopologicalLink(map.get(srcId), map.get(destId), (float) lat, (float) bw));
 
-        generateMatrices();
+        //generateMatrices();
 
     }
 
