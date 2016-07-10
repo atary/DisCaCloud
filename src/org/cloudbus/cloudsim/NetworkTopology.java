@@ -56,6 +56,8 @@ public class NetworkTopology {
         return bw;
     }
 
+    protected static Map<Integer, Integer> counter = null;
+
     /**
      * Creates the network topology if file exists and if file can be
      * succesfully parsed. File is written in the BRITE format and contains
@@ -74,6 +76,7 @@ public class NetworkTopology {
         try {
             graph = reader.readGraphFile(fileName);
             map = new HashMap<Integer, Integer>();
+            counter = new HashMap<Integer, Integer>();
             generateMatrices();
             nextIdx = bwMatrix.length; //ATAKAN: in order to allow future link/node additions.
         } catch (IOException e) {
@@ -135,7 +138,6 @@ public class NetworkTopology {
         graph.addLink(new TopologicalLink(map.get(srcId), map.get(destId), (float) lat, (float) bw));
 
         //generateMatrices();
-
     }
 
     /**
@@ -243,7 +245,7 @@ public class NetworkTopology {
         }
         return 0.0;
     }
-    
+
     public static double getHopCount(int srcID, int destID) {
         if (networkEnabled) {
             try {
@@ -261,23 +263,30 @@ public class NetworkTopology {
     public static double getDcCentrality(int srcID) {
         return delayMatrix.getCentrality(map.get(srcID));
     }
-    
-    public static int getMostCentralDc(){
+
+    public static int getMostCentralDc() {
         return inverseMap(delayMatrix.getMostCentralNode());
     }
 
-    public static int getClosestNodeId(double x, double y) {
+    public static int getClosestNodeId(double x, double y, int limit) {
         int minID = -1;
         double minError = Double.MAX_VALUE;
         Iterator<TopologicalNode> iter = graph.getNodeIterator();
         while (iter.hasNext()) {
             TopologicalNode n = iter.next();
+            int val = counter.get(inverseMap(n.getNodeID())) == null ? 0 : counter.get(inverseMap(n.getNodeID()));
+            if (val >= limit) {
+                continue;
+            }
             double error = Math.pow(x - n.getCoordinateX(), 2) + Math.pow(y - n.getCoordinateY(), 2);
             if (error < minError) {
                 minID = inverseMap(n.getNodeID());
                 minError = error;
             }
         }
+        int val = counter.get(minID) == null ? 0 : counter.get(minID);
+        val++;
+        counter.put(minID, val);
         return minID;
     }
 

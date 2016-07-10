@@ -79,13 +79,13 @@ public class DisCaCloud {
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
             CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
-            CloudSim.enableCache(1000);
+            CloudSim.enableCache(100);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 1000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
@@ -102,7 +102,7 @@ public class DisCaCloud {
                 dcList.put(dc.getId(), dc);
                 NetworkTopology.mapNode(dc.getId(), i);
             }
-            System.out.println("DCs created...");
+            //System.out.println("DCs created...");
             for (Datacenter dc : dcList.values()) {
                 labelMap.put(dc.getId(), dc.getName());
                 String name = dc.getName() + "_BROKER";
@@ -114,7 +114,7 @@ public class DisCaCloud {
             }
             NetworkTopology.generateMatrices();
             
-            System.out.println("Links added...");
+            //System.out.println("Links added...");
             Datacenter.setLabelMap(labelMap);
             mainDcId = NetworkTopology.getMostCentralDc();
 
@@ -126,7 +126,7 @@ public class DisCaCloud {
             }
             wsReader.open(requestFile);
             int storageSize = 0;
-            System.out.println("Geolocation starts here...");
+            //System.out.println("Geolocation starts here...");
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
                 Datacenter selectedDC = null;
                 if (geoLocation) {
@@ -152,8 +152,8 @@ public class DisCaCloud {
                     y = y < 0 ? 0 : y;
                     y *= 1.4;
                     y = y > 1000 ? 1000 : y;
-                    System.out.println(x + "\t" + y);
-                    selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y));
+                    //System.out.println(x + "\t" + y);
+                    selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 10*numRecords/num_user));
                     dcLoads[selectedDC.getId()]++;
                 } else {
                     Object[] values = dcList.values().toArray();
@@ -172,7 +172,7 @@ public class DisCaCloud {
             }
 
             System.out.println(Arrays.toString(dcLoads));
-            if (true) {
+            if (false) {
                 return;
             }
             CloudSim.startSimulation();
