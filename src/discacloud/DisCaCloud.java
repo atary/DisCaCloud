@@ -68,7 +68,7 @@ public class DisCaCloud {
         Log.printLine("Starting DisCaCloud...");
 
         try {
-            int num_user = 1000;
+            int num_user = 100;
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false;
             int[] dcLoads = new int[num_user+2];
@@ -79,19 +79,19 @@ public class DisCaCloud {
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
             CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
-            //CloudSim.enableCache(1000);
+            CloudSim.enableCache(200);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 100000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
 
             HashMap<Integer, String> labelMap = new HashMap<>();
-            NetworkTopology.buildNetworkTopology("C:\\topology1000.brite");
+            NetworkTopology.buildNetworkTopology("C:\\topology100.brite");
 
             HashMap<Integer, Datacenter> dcList = new HashMap<>();
             HashMap<Integer, DatacenterBroker> brList = new HashMap<>();
@@ -129,6 +129,8 @@ public class DisCaCloud {
             //System.out.println("Geolocation starts here...");
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
                 Datacenter selectedDC = null;
+                double x = 0;
+                double y = 0;
                 if (geoLocation) {
                     InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
@@ -142,8 +144,8 @@ public class DisCaCloud {
                         continue;
                     }
 
-                    double x = (lat + 90) * planeSize / 180;
-                    double y = (lon + 180) * planeSize / 360;
+                    x = (lat + 90) * planeSize / 180;
+                    y = (lon + 180) * planeSize / 360;
                     x -= 600;
                     x = x < 0 ? 0 : x;
                     x *= 4.5;
@@ -161,7 +163,7 @@ public class DisCaCloud {
                     selectedDC = (Datacenter) randomValue;
                 }
                 DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
-                createLoad(mainDcId, selectedDC, selectedBR, (int) (w.getReqTime() / timeDiv) - timeOffset, Arrays.asList(w.getServerID().hashCode()));
+                createLoad(mainDcId, selectedDC, selectedBR, (int) (w.getReqTime() / timeDiv) - timeOffset, Arrays.asList(w.getServerID().hashCode()), x+"-"+y);
                 numRequests++;
                 int dataObjectId = w.getServerID().hashCode();
                 if (dataObjectIds.add(dataObjectId)) {
@@ -377,7 +379,7 @@ public class DisCaCloud {
         }
     }
 
-    private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests) {
+    private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests, String xy) {
         int mips = 500;
         long size = 10000; // image size (MB)
         int ram = 512; // vm memory (MB)
@@ -397,6 +399,7 @@ public class DisCaCloud {
         cloudlet.setUserId(br.getId());
         cloudlet.setVmId(newVm.getId());
         cloudlet.setMainDC(mainDcId);
+        cloudlet.setCoords(xy);
         for (int dr : dataRequests) {
             cloudlet.addDataRequest(dr);
         }

@@ -222,6 +222,7 @@ public class Cloudlet implements Comparable<Cloudlet> {
     }*/
     // ATAKAN: Which data will be required
     private final ArrayList<Integer> requiredData = new ArrayList<>();
+    private String coords;
 
     public void addDataRequest(int dataObjectID) {
         requiredData.add(dataObjectID);
@@ -487,6 +488,14 @@ public class Cloudlet implements Comparable<Cloudlet> {
             return -1;
         }
         return 0;
+    }
+
+    public void setCoords(String xy) {
+        coords = xy;
+    }
+    
+    public String getCoords(){
+        return coords;
     }
 
     // ////////////////////// INTERNAL CLASS ///////////////////////////////////

@@ -839,6 +839,9 @@ public class Datacenter extends SimEntity {
                 for (int dataObjectID : requiredData) {
                     boolean found = false;
                     for (Cache c : caches) {
+                        if (c.isLocalCache() && !cl.getCoords().equals(c.getCloudlet().getCoords())) {
+                            //continue;
+                        }
                         if (c.dataObjectID == dataObjectID) {
                             cl.addDataReceive(dataObjectID);
                             found = true;
@@ -954,7 +957,7 @@ public class Datacenter extends SimEntity {
         if (CloudSim.isCacheEnabled()) {
             int id = data[4];
             int length = data[5];
-            if (caches.add(new Cache(id, length))) {
+            if (caches.add(new Cache(id, length, cl))) {
                 Log.cacheStart(getId(), id);
                 Log.creation();
             }
@@ -975,8 +978,7 @@ public class Datacenter extends SimEntity {
                     Log.cacheEnd(getId(), lruCache.getDataObjectID(), length);
                     Log.removal();
                     lru.remove(lruCache.getDataObjectID());
-                }
-                else{
+                } else {
                     throw new RuntimeException("LRU cache is already removed");
                 }
             }
@@ -1577,11 +1579,25 @@ public class Datacenter extends SimEntity {
 
         private final int dataObjectID;
         private final int length;
-        //History
+        private Cloudlet c;
 
         public Cache(int dataObjectID, int length) {
             this.dataObjectID = dataObjectID;
             this.length = length;
+            c = null;
+        }
+
+        public Cache(int dataObjectID, int length, Cloudlet c) {
+            this(dataObjectID, length);
+            this.c = c;
+        }
+
+        public boolean isLocalCache() {
+            return CloudSim.isCacheEnabled() && null != c;
+        }
+
+        public Cloudlet getCloudlet() {
+            return c;
         }
 
         public int getDataObjectID() {
