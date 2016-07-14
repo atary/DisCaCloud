@@ -840,7 +840,7 @@ public class Datacenter extends SimEntity {
                     boolean found = false;
                     for (Cache c : caches) {
                         if (c.dataObjectID == dataObjectID) {
-                            if (c.isLocalCache() && !cl.getCoords().equals(c.getCloudlet().getCoords())) {
+                            if (c.isLocalCache() && !cl.getClient().equals(c.getCloudlet().getClient())) {
                                 continue;
                             }
                             cl.addDataReceive(dataObjectID);

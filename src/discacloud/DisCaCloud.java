@@ -78,13 +78,14 @@ public class DisCaCloud {
             //CONFIGURATION
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
-            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 1);
-            //CloudSim.enableCache(20);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
+            CloudSim.enableCache(20);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
+            int totalRecords = 1000000;
             int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
             int numRequests = 0;
             int timeOffset = 0;
@@ -128,7 +129,14 @@ public class DisCaCloud {
             wsReader.open(requestFile);
             int storageSize = 0;
             //System.out.println("Geolocation starts here...");
-            for (RequestDatum w : wsReader.readNRecords(numRecords)) {
+            
+            int modulo = totalRecords/numRecords;
+            int counter = 0;
+            for (RequestDatum w : wsReader.readNRecords(totalRecords)) {
+                counter++;
+                if (counter % modulo > 0) {
+                    continue;
+                }
                 Datacenter selectedDC = null;
                 double x = 0;
                 double y = 0;
@@ -183,24 +191,24 @@ public class DisCaCloud {
             CloudSim.stopSimulation();
 
             //Log.enable();
-            List<Cloudlet> newList = new ArrayList<>();
+            List<Cloudlet> clList = new ArrayList<>();
             for (DatacenterBroker br : brList.values()) {
-                newList.addAll(br.getCloudletReceivedList());
+                clList.addAll(br.getCloudletSubmittedList());
             }
 
             if (!Log.isDisabled()) {
-                Collections.sort(newList);
-                printCloudletList(newList);
+                Collections.sort(clList);
+                printCloudletList(clList);
             }
-
+            
             if (batch) {
                 String text = ("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
-                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime()));
+                text = "\n" + (dft.format(clList.get(clList.size() - 1).getFinishTime()));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + numRequests;
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
-                text = "\n" + newList.size();
+                text = "\n" + clList.size();
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dataObjectIds.size());
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
@@ -220,7 +228,7 @@ public class DisCaCloud {
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
-                text = "\n" + (dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
+                text = "\n" + (dft.format(clList.get(clList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dft.format(Log.getBandwidthCost()));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
@@ -229,9 +237,9 @@ public class DisCaCloud {
             } else {
                 Log.printIntervals();
                 System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
-                System.out.println("Finish Time: " + dft.format(newList.get(newList.size() - 1).getFinishTime()));
+                System.out.println("Finish Time: " + dft.format(clList.get(clList.size() - 1).getFinishTime()));
                 System.out.println("Number of Requests: " + numRequests);
-                System.out.println("Number of Successful Requests: " + newList.size());
+                System.out.println("Number of Successful Requests: " + clList.size());
                 System.out.println("Number of Unique Clients: " + clientIds.size());
                 System.out.println("Number of Unique Data Objects: " + dataObjectIds.size());
                 System.out.println("Number of Data Objects Received from Main DC: " + Log.getDataReturnedFromMainDC());
@@ -242,7 +250,7 @@ public class DisCaCloud {
                 System.out.println("Storage Cost: " + dft.format(Log.getStorageCost()));
                 System.out.println("Total Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_RETURN)));
                 System.out.println("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
-                System.out.println("Main Storage Cost: " + dft.format(newList.get(newList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
+                System.out.println("Main Storage Cost: " + dft.format(clList.get(clList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
                 System.out.println("Bandwidth Cost: " + dft.format(Log.getBandwidthCost()));
                 System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
             }
@@ -356,22 +364,22 @@ public class DisCaCloud {
         Cloudlet cloudlet;
 
         String indent = "\t";
-        Log.printLine();
-        Log.printLine("========== OUTPUT ==========");
-        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + indent
+        System.out.println();
+        System.out.println("========== OUTPUT ==========");
+        System.out.println("Cloudlet ID" + indent + "STATUS" + indent + indent
                 + "DC ID" + indent + "VM ID" + indent + "Time" + indent
                 + "Start" + indent + "Finish");
 
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
-            Log.print(cloudlet.getCloudletId() + indent + indent);
+            System.out.print(cloudlet.getCloudletId() + indent + indent);
 
             if (cloudlet.getCloudletStatus() == Cloudlet.SUCCESS) {
-                Log.print("SUCCESS");
+                System.out.print("SUCCESS");
             } else {
-                Log.print("FAILED");
+                System.out.print("FAILED");
             }
-            Log.printLine(indent + indent + cloudlet.getResourceId()
+            System.out.println(indent + indent + cloudlet.getResourceId()
                     + indent + cloudlet.getVmId()
                     + indent
                     + dft.format(cloudlet.getActualCPUTime()) + indent
@@ -382,7 +390,7 @@ public class DisCaCloud {
         }
     }
 
-    private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests, String xy) {
+    private static void createLoad(int mainDcId, Datacenter dc, DatacenterBroker br, int start, List<Integer> dataRequests, String clientId) {
         int mips = 500;
         long size = 10000; // image size (MB)
         int ram = 512; // vm memory (MB)
@@ -402,7 +410,7 @@ public class DisCaCloud {
         cloudlet.setUserId(br.getId());
         cloudlet.setVmId(newVm.getId());
         cloudlet.setMainDC(mainDcId);
-        cloudlet.setCoords(xy);
+        cloudlet.setClient(clientId);
         for (int dr : dataRequests) {
             cloudlet.addDataRequest(dr);
         }

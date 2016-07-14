@@ -222,7 +222,7 @@ public class Cloudlet implements Comparable<Cloudlet> {
     }*/
     // ATAKAN: Which data will be required
     private final ArrayList<Integer> requiredData = new ArrayList<>();
-    private String coords;
+    private String clientId;
 
     public void addDataRequest(int dataObjectID) {
         requiredData.add(dataObjectID);
@@ -481,21 +481,21 @@ public class Cloudlet implements Comparable<Cloudlet> {
 
     @Override
     public int compareTo(Cloudlet o) {
-        if (finishTime > o.getFinishTime()) {
+        if (execStartTime > o.getExecStartTime()) {
             return 1;
         }
-        if (finishTime < o.getFinishTime()) {
+        if (execStartTime < o.getExecStartTime()) {
             return -1;
         }
         return 0;
     }
 
-    public void setCoords(String xy) {
-        coords = xy;
+    public void setClient(String client) {
+      clientId = client;
     }
     
-    public String getCoords(){
-        return coords;
+    public String getClient(){
+        return clientId;
     }
 
     // ////////////////////// INTERNAL CLASS ///////////////////////////////////
