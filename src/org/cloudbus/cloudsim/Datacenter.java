@@ -1018,6 +1018,7 @@ public class Datacenter extends SimEntity {
             ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
             if (mainStorage) {
                 for (Cache c : caches) {
+                    addRecentRequestors(c);
                     for (int n : neighbours) {
                         double neighbourCost = CloudSim.storageCosts.get(n);
                         if (getDemand(c.dataObjectID, n, 0) > neighbourCost) { //Create Decision
@@ -1029,6 +1030,7 @@ public class Datacenter extends SimEntity {
                 }
             } else {
                 for (Cache c : caches) {
+                    addRecentRequestors(c);
                     //boolean actionTaken = false;
                     double localCost = CloudSim.storageCosts.get(getId());
                     double allNeighboursDemand = 0;
@@ -1079,6 +1081,15 @@ public class Datacenter extends SimEntity {
         send(getId(), CloudSim.getCacheQuantum(), CloudSimTags.CHECK_DEMAND_FOR_CACHES);
     }
 
+    private void addRecentRequestors(Cache c) {
+        c.recentRequestors.clear();
+        for (Request r : requests) {
+            if (r.dataObjectID == c.dataObjectID) {
+                c.addRequestor(r.originalSource);
+            }
+        }
+    }
+
     private double getDemand(int dataObjectId, int neighbourId, double latencyOffset) {
         double demand = 0;
         for (Request r : requests) {
@@ -1098,7 +1109,7 @@ public class Datacenter extends SimEntity {
             Log.printLine(CloudSim.clock() + ": +" + getName() + ": Cache for data object #" + c.getDataObjectID() + " is created");
             Log.cacheStart(getId(), c.dataObjectID);
             //Notify other DCs for the new cache
-            notifyOtherDCs(CloudSimTags.ADD_CACHE_LOCATION, c.dataObjectID);
+            notifyOtherDCs(CloudSimTags.ADD_CACHE_LOCATION, c);
         }
         //TODO: what if capacity is not enough
     }
@@ -1112,18 +1123,16 @@ public class Datacenter extends SimEntity {
         }
 
         //Notify other DCs for the removal
-        notifyOtherDCs(CloudSimTags.REMOVE_CACHE_LOCATION, c.dataObjectID);
+        notifyOtherDCs(CloudSimTags.REMOVE_CACHE_LOCATION, c);
     }
 
-    private void notifyOtherDCs(int message, int dataObjectID) {
-        ArrayList<Integer> neighbours = NetworkTopology.getNeighbours(getId());
-        for (int n : neighbours) {
-            sendNow(n, message, dataObjectID);
-        }
-        for (Request r : requests) {
-            if (r.dataObjectID == dataObjectID && !neighbours.contains(r.originalSource)) {
-                sendNow(r.originalSource, message, dataObjectID);
-            }
+    private void notifyOtherDCs(int message, Cache c) {
+        int dataObjectID = c.getDataObjectID();
+        HashSet<Integer> dcIds = c.getRecentRequestors();
+        dcIds.addAll(NetworkTopology.getNeighbours(getId()));
+        
+        for (int i : dcIds) {
+            sendNow(i, message, dataObjectID);
         }
     }
 
@@ -1581,15 +1590,26 @@ public class Datacenter extends SimEntity {
         private final int length;
         private Cloudlet c;
 
+        private HashSet<Integer> recentRequestors;
+
         public Cache(int dataObjectID, int length) {
             this.dataObjectID = dataObjectID;
             this.length = length;
             c = null;
+            recentRequestors = new HashSet<>();
         }
 
         public Cache(int dataObjectID, int length, Cloudlet c) {
             this(dataObjectID, length);
             this.c = c;
+        }
+
+        public HashSet<Integer> getRecentRequestors() {
+            return recentRequestors;
+        }
+
+        public void addRequestor(int r) {
+            recentRequestors.add(r);
         }
 
         public boolean isLocalCache() {

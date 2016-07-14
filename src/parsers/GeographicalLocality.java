@@ -39,24 +39,29 @@ public class GeographicalLocality {
             reader = new DatabaseReader.Builder(GeoDatabase).build();
             wsReader.open(requestFile);
 
+            int iii = 0;
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
+                iii++;
+                if (iii % 1000 > 0) {
+                    continue;
+                }
                 
-                ids.add(w.getClientID());
-                uids.add(w.getClientID());
-
-                /*InetAddress clientIP = InetAddress.getByName(w.getClientID());
+                InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
                 CityResponse clientCity;
                 try {
                     clientCity = reader.city(clientIP);
                     locations.add(clientCity.getLocation());
                     //System.out.println(clientCity.getLocation().getLatitude() + "\t" + clientCity.getLocation().getLongitude());
+                    ids.add(w.getClientID());
+                    uids.add(w.getClientID());
                 } catch (Exception ex) {
-                }*/
+                }
             }
-            if(true){
+            if (true) {
                 System.out.println(uids.size());
                 System.out.println(ids.size());
+                System.out.println((double)ids.size()/uids.size());
                 return;
             }
             Path p = Paths.get("C:\\distances.txt");
