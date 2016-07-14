@@ -76,17 +76,17 @@ public class DisCaCloud {
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
+            CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 5000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
-            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0);
-            CloudSim.enableCache(20);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 1);
+            //CloudSim.enableCache(30);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
             int totalRecords = 1000000;
-            int numRecords = batch ? Integer.parseInt(args[2]) : 10000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 100000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
@@ -164,8 +164,13 @@ public class DisCaCloud {
                     y *= 1.4;
                     y = y > 1000 ? 1000 : y;
                     //System.out.println(x + "\t" + y);
-                    selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 10*numRecords/num_user));
-                    dcLoads[selectedDC.getId()]++;
+                    try{
+                        selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 10*numRecords/num_user));
+                        dcLoads[selectedDC.getId()]++;
+                    }
+                    catch(Exception e){
+                        continue;
+                    }
                 } else {
                     Object[] values = dcList.values().toArray();
                     Object randomValue = values[Math.abs(w.getClientID().hashCode()) % values.length];
@@ -202,7 +207,7 @@ public class DisCaCloud {
             }
             
             if (batch) {
-                String text = ("[Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+                String text = ("[Quantum, Aggression, MainDC, GeoLocation, Input, Cache] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + ", " + CloudSim.isCacheEnabled() + "]");
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
                 text = "\n" + (dft.format(clList.get(clList.size() - 1).getFinishTime()));
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
@@ -235,8 +240,8 @@ public class DisCaCloud {
                 text = "\n" + ("[Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]") + "\n----\n";
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
             } else {
-                Log.printIntervals();
-                System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + "]");
+                //Log.printIntervals();
+                System.out.println("Configuration: [Quantum, Aggression, MainDC, GeoLocation, Input, Cache] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + ", " + CloudSim.isCacheEnabled() + "(" + CloudSim.getCacheLength() + ")]");
                 System.out.println("Finish Time: " + dft.format(clList.get(clList.size() - 1).getFinishTime()));
                 System.out.println("Number of Requests: " + numRequests);
                 System.out.println("Number of Successful Requests: " + clList.size());
