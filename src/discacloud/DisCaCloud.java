@@ -96,6 +96,7 @@ public class DisCaCloud {
             HashMap<Integer, Datacenter> dcList = new HashMap<>();
             HashMap<Integer, DatacenterBroker> brList = new HashMap<>();
             HashSet<Integer> dataObjectIds = new HashSet<>();
+            HashSet<String> clientIds = new HashSet<>();
 
             for (int i = 0; i < num_user; i++) {
                 Datacenter dc = createDatacenter("DC_" + i); //labels.get(i)
@@ -163,17 +164,18 @@ public class DisCaCloud {
                     selectedDC = (Datacenter) randomValue;
                 }
                 DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
-                createLoad(mainDcId, selectedDC, selectedBR, (int) (w.getReqTime() / timeDiv) - timeOffset, Arrays.asList(w.getServerID().hashCode()), x+"-"+y);
+                createLoad(mainDcId, selectedDC, selectedBR, (int) (w.getReqTime() / timeDiv) - timeOffset, Arrays.asList(w.getServerID().hashCode()), w.getClientID());
                 numRequests++;
                 int dataObjectId = w.getServerID().hashCode();
                 if (dataObjectIds.add(dataObjectId)) {
                     dcList.get(mainDcId).addDataToMainDC(dataObjectId, (w.getLength()));
                     storageSize += w.getLength();
                 }
+                clientIds.add(w.getClientID());
                 //System.out.println("From " + w.getClientID() + " to " + w.getServerID() + " at " + w.getReqTime() + " with size " + w.getLength());
             }
-
-            System.out.println(Arrays.toString(dcLoads));
+            //System.out.println(clientIds.size() + "/" + numRequests);
+            //System.out.println(Arrays.toString(dcLoads));
             if (false) {
                 return;
             }
@@ -230,6 +232,7 @@ public class DisCaCloud {
                 System.out.println("Finish Time: " + dft.format(newList.get(newList.size() - 1).getFinishTime()));
                 System.out.println("Number of Requests: " + numRequests);
                 System.out.println("Number of Successful Requests: " + newList.size());
+                System.out.println("Number of Unique Clients: " + clientIds.size());
                 System.out.println("Number of Unique Data Objects: " + dataObjectIds.size());
                 System.out.println("Number of Data Objects Received from Main DC: " + Log.getDataReturnedFromMainDC());
                 System.out.println("Number of Data Objects Received from a Cache: " + Log.getDataReturnedFromCache());

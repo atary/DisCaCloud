@@ -839,10 +839,10 @@ public class Datacenter extends SimEntity {
                 for (int dataObjectID : requiredData) {
                     boolean found = false;
                     for (Cache c : caches) {
-                        if (c.isLocalCache() && !cl.getCoords().equals(c.getCloudlet().getCoords())) {
-                            //continue;
-                        }
                         if (c.dataObjectID == dataObjectID) {
+                            if (c.isLocalCache() && !cl.getCoords().equals(c.getCloudlet().getCoords())) {
+                                continue;
+                            }
                             cl.addDataReceive(dataObjectID);
                             found = true;
                             Log.printLine(CloudSim.clock() + ": " + getName() + ": Data object #" + c.dataObjectID + " is found locally ");

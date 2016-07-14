@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  *
@@ -20,9 +21,10 @@ import java.util.ArrayList;
 public class GeographicalLocality {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        int numRecords = 1000;
+        int numRecords = 1000000;
         //double distanceThreshold = 100;
-
+        HashSet<String> uids = new HashSet<>();
+        ArrayList<String> ids = new ArrayList<>();
         for (double distanceThreshold = 100; distanceThreshold <= 100; distanceThreshold += 100) {
 
             int closeCount = 0;
@@ -38,8 +40,11 @@ public class GeographicalLocality {
             wsReader.open(requestFile);
 
             for (RequestDatum w : wsReader.readNRecords(numRecords)) {
+                
+                ids.add(w.getClientID());
+                uids.add(w.getClientID());
 
-                InetAddress clientIP = InetAddress.getByName(w.getClientID());
+                /*InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
                 CityResponse clientCity;
                 try {
@@ -47,7 +52,12 @@ public class GeographicalLocality {
                     locations.add(clientCity.getLocation());
                     //System.out.println(clientCity.getLocation().getLatitude() + "\t" + clientCity.getLocation().getLongitude());
                 } catch (Exception ex) {
-                }
+                }*/
+            }
+            if(true){
+                System.out.println(uids.size());
+                System.out.println(ids.size());
+                return;
             }
             Path p = Paths.get("C:\\distances.txt");
             int count = (locations.size() * (locations.size() - 1)) / 2;
@@ -60,7 +70,7 @@ public class GeographicalLocality {
                 double lon1 = l1.getLongitude();
                 for (int j = i + 1; j < locations.size(); j++) {
                     k++;
-                    if(k*100/count > prev){
+                    if (k * 100 / count > prev) {
                         System.out.println(++prev + "%");
                     }
                     totalCount++;
