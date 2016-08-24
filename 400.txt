@@ -1,0 +1,17 @@
+[Quantum, Aggression, MainDC, GeoLocation, Input, Cache] = [400.0, 0.01, 4, true, wSharkLogs/juice1M.txt, false]
+32,139.1
+89001
+89001
+5884
+74598
+4894
+9403
+106
+3
+44,544,403.9
+140,527.0
+03.0
+1,411,713,181.4
+6,431,109.8
+[Creation, Duplication, Migration, Removal] = [3414, 298, 431, 3624]
+----

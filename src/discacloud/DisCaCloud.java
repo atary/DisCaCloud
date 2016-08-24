@@ -42,7 +42,6 @@ import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 import parsers.RequestDatum;
 import parsers.RequestTextReaderInterface;
-import parsers.WCTextReader;
 import parsers.WSharkTextReader;
 
 public class DisCaCloud {
@@ -58,8 +57,9 @@ public class DisCaCloud {
 
         if (args.length > 0) {
             batch = true;
-            int val = (int) (Double.parseDouble(args[1]) * 1000);
-            fileName = val + ".txt";
+            //int val = (int) (Double.parseDouble(args[1]) * 1000);
+            //fileName = val + ".txt";
+            fileName = args[0] + ".txt";
             System.out.println(fileName);
         }
 
@@ -78,8 +78,8 @@ public class DisCaCloud {
             //CONFIGURATION
             CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
-            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 1);
-            //CloudSim.enableCache(30);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0.0);
+            //CloudSim.enableCache(100);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
