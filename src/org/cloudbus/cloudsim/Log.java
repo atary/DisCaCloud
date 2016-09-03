@@ -29,6 +29,18 @@ public class Log {
      * The Constant LINE_SEPARATOR.
      */
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    
+    private static int messageCount;
+    private static int notificationCount;
+    
+    public static void newMessage(boolean isNotification){
+        if(isNotification) notificationCount++;
+        else messageCount++;
+    }
+    
+    public static double getNotificationPercentage(){
+        return (double)(notificationCount) / (double)(messageCount+notificationCount);
+    }
 
     private static int fromCache = 0;
     private static int fromMain = 0;

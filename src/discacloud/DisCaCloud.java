@@ -71,22 +71,22 @@ public class DisCaCloud {
             int num_user = 100;
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false;
-            int[] dcLoads = new int[num_user+2];
+            int[] dcLoads = new int[num_user + 2];
 
             CloudSim.init(num_user, calendar, trace_flag);
 
             //CONFIGURATION
-            CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 1000);
+            CloudSim.setCacheQuantum(batch ? Integer.parseInt(args[0]) : 5000);
             Log.setIntervalDuration(CloudSim.getCacheQuantum());
-            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0.0);
+            CloudSim.setAggression(batch ? Double.parseDouble(args[1]) : 0.008);
             //CloudSim.enableCache(100);
             int mainDcId;
             int planeSize = 1000;
             boolean geoLocation = true;
             String requestFile = "wSharkLogs/juice1M.txt";
             RequestTextReaderInterface wsReader = new WSharkTextReader();
-            int totalRecords = 100000;
-            int numRecords = batch ? Integer.parseInt(args[2]) : 100000;
+            int totalRecords = 1000000;
+            int numRecords = batch ? Integer.parseInt(args[2]) : 200000;
             int numRequests = 0;
             int timeOffset = 0;
             double timeDiv = 10;
@@ -115,7 +115,7 @@ public class DisCaCloud {
                 NetworkTopology.addLink(dc.getId(), br.getId(), 10.0, 0.1);
             }
             NetworkTopology.generateMatrices();
-            
+
             //System.out.println("Links added...");
             Datacenter.setLabelMap(labelMap);
             mainDcId = NetworkTopology.getMostCentralDc();
@@ -129,8 +129,8 @@ public class DisCaCloud {
             wsReader.open(requestFile);
             int storageSize = 0;
             //System.out.println("Geolocation starts here...");
-            
-            int modulo = totalRecords/numRecords;
+
+            int modulo = totalRecords / numRecords;
             int counter = 0;
             for (RequestDatum w : wsReader.readNRecords(totalRecords)) {
                 counter++;
@@ -164,11 +164,10 @@ public class DisCaCloud {
                     y *= 1.4;
                     y = y > 1000 ? 1000 : y;
                     //System.out.println(x + "\t" + y);
-                    try{
-                        selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 10*numRecords/num_user));
+                    try {
+                        selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 10 * numRecords / num_user));
                         dcLoads[selectedDC.getId()]++;
-                    }
-                    catch(Exception e){
+                    } catch (Exception e) {
                         continue;
                     }
                 } else {
@@ -205,7 +204,7 @@ public class DisCaCloud {
                 Collections.sort(clList);
                 printCloudletList(clList);
             }
-            
+
             if (batch) {
                 String text = ("[Quantum, Aggression, MainDC, GeoLocation, Input, Cache] = [" + CloudSim.getCacheQuantum() + ", " + CloudSim.getAggression() + ", " + mainDcId + ", " + geoLocation + ", " + requestFile + ", " + CloudSim.isCacheEnabled() + "]");
                 Files.write(Paths.get(fileName), text.getBytes(), StandardOpenOption.APPEND);
@@ -257,6 +256,7 @@ public class DisCaCloud {
                 System.out.println("Total Failure Latency: " + dft.format(Log.getMessageLatency(CloudSimTags.REMOTE_DATA_NOT_FOUND)));
                 System.out.println("Main Storage Cost: " + dft.format(clList.get(clList.size() - 1).getFinishTime() * storageSize * CloudSim.storageCosts.get(mainDcId)));
                 System.out.println("Bandwidth Cost: " + dft.format(Log.getBandwidthCost()));
+                System.out.println("Notification Percentage: " + dft.format(Log.getNotificationPercentage()));
                 System.out.println("OPERATIONS: [Creation, Duplication, Migration, Removal] = [" + Log.getCreation() + ", " + Log.getDuplication() + ", " + Log.getMigration() + ", " + Log.getRemoval() + "]");
             }
         } catch (Exception e) {

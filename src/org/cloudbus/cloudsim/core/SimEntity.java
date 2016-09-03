@@ -540,7 +540,14 @@ public abstract class SimEntity implements Cloneable {
 		if (entityId != srcId) {// does not delay self messages
 			delay += getNetworkDelay(srcId, entityId);
 		}
-
+                
+                if(cloudSimTag==CloudSimTags.ADD_CACHE_LOCATION || cloudSimTag==CloudSimTags.REMOVE_CACHE_LOCATION){
+                    Log.newMessage(true);
+                }
+                else{
+                    Log.newMessage(false);
+                }
+                
 		schedule(entityId, delay, cloudSimTag, data);
 	}
 
