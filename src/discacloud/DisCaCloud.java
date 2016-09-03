@@ -44,6 +44,8 @@ import parsers.RequestDatum;
 import parsers.RequestTextReaderInterface;
 import parsers.WSharkTextReader;
 
+import org.apache.commons.math3.distribution.*;
+
 public class DisCaCloud {
 
     private static int vmid = 0;
@@ -57,9 +59,9 @@ public class DisCaCloud {
 
         if (args.length > 0) {
             batch = true;
-            //int val = (int) (Double.parseDouble(args[1]) * 1000);
-            //fileName = val + ".txt";
-            fileName = args[0] + ".txt";
+            int val = (int) (Double.parseDouble(args[1]) * 1000);
+            fileName = val + ".txt";
+            //fileName = args[0] + ".txt";
             System.out.println(fileName);
         }
 
@@ -132,6 +134,9 @@ public class DisCaCloud {
 
             int modulo = totalRecords / numRecords;
             int counter = 0;
+
+            RealDistribution rd = new UniformRealDistribution(0, 1000);
+
             for (RequestDatum w : wsReader.readNRecords(totalRecords)) {
                 counter++;
                 if (counter % modulo > 0) {
@@ -140,6 +145,7 @@ public class DisCaCloud {
                 Datacenter selectedDC = null;
                 double x = 0;
                 double y = 0;
+
                 if (geoLocation) {
                     InetAddress clientIP = InetAddress.getByName(w.getClientID());
 
@@ -171,9 +177,19 @@ public class DisCaCloud {
                         continue;
                     }
                 } else {
-                    Object[] values = dcList.values().toArray();
-                    Object randomValue = values[Math.abs(w.getClientID().hashCode()) % values.length];
-                    selectedDC = (Datacenter) randomValue;
+                    //Object[] values = dcList.values().toArray();
+                    //Object randomValue = values[Math.abs(w.getClientID().hashCode()) % values.length];
+                    //selectedDC = (Datacenter) randomValue;
+
+                    x = rd.sample();
+                    y = rd.sample();
+                    
+                    try {
+                        selectedDC = dcList.get(NetworkTopology.getClosestNodeId(x, y, 9999999));
+                        dcLoads[selectedDC.getId()]++;
+                    } catch (Exception e) {
+                        continue;
+                    }
                 }
                 DatacenterBroker selectedBR = brList.get(selectedDC.getBindedBR());
                 createLoad(mainDcId, selectedDC, selectedBR, (int) (w.getReqTime() / timeDiv) - timeOffset, Arrays.asList(w.getServerID().hashCode()), w.getClientID());
